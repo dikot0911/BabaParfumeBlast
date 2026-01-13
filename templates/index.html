@@ -83,11 +83,22 @@
                 <div class="row g-4">
                     <!-- Stat Box -->
                     <div class="col-md-4">
-                        <div class="crm-stat-box h-100 shadow">
+                        <div class="crm-stat-box h-100 shadow mb-3">
                             <i class="fas fa-address-book fa-2x mb-2 opacity-50"></i>
                             <div class="crm-stat-label">Total Database User</div>
                             <div class="crm-stat-number">{{ user_count }}</div>
                             <small>Pelanggan potensial tersimpan</small>
+                        </div>
+                        
+                        <!-- TOMBOL IMPORT BARU -->
+                        <div class="card shadow-sm border-info">
+                            <div class="card-body text-center">
+                                <h6 class="fw-bold text-info"><i class="fas fa-cloud-download-alt me-2"></i>Import Data Lama</h6>
+                                <p class="small text-muted mb-2">Scan semua chat personal (DM) yang ada di Telegram dan simpan ke Database.</p>
+                                <button onclick="importCRM()" class="btn btn-outline-info w-100 rounded-pill">
+                                    Mulai Import Sekarang
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -293,7 +304,7 @@
         // --- GLOBAL VARIABLES ---
         let scannedData = [];
 
-        // --- SCANNER FUNCTION (PERBAIKAN UTAMA DI SINI) ---
+        // --- SCANNER FUNCTION ---
         function scanTelegram() {
             const loader = document.getElementById('loader');
             const resultArea = document.getElementById('scan-results-area');
@@ -349,7 +360,18 @@
                         </div>
                     </div>
                     
-                    <!-- AREA TOPIK FORUM -->
+                    <!-- AREA INPUT MANUAL TOPIK (UNTUK SEMUA GRUP) -->
+                    <div class="mt-2 ms-4">
+                         <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light text-muted">Manual Topik ID:</span>
+                            <input type="text" class="form-control" id="manual-topic-${index}" placeholder="Contoh: 12345, 67890 (Pisahkan koma)">
+                        </div>
+                        <div class="form-text text-muted small ms-1" style="font-size: 0.75rem;">
+                            Jika scan otomatis gagal, masukkan ID topik secara manual di sini.
+                        </div>
+                    </div>
+
+                    <!-- AREA TOPIK FORUM (OTOMATIS) -->
                     ${group.is_forum ? `
                         <div class="topic-container ms-4 mt-2" id="topics-${index}">
                             ${hasTopics ? `
@@ -372,8 +394,8 @@
                             ` : `
                                 <div class="alert alert-warning py-2 small mb-0">
                                     <i class="fas fa-exclamation-circle me-1"></i>
-                                    <strong>Tidak ada topik ditemukan.</strong><br>
-                                    Kemungkinan bot belum admin atau tidak ada topik yang 'Open'.
+                                    <strong>Tidak ada topik otomatis ditemukan.</strong><br>
+                                    Silakan gunakan kolom "Manual Topik ID" di atas.
                                 </div>
                             `}
                         </div>
@@ -397,26 +419,36 @@
             });
         }
 
-        // --- SAVE FUNCTION ---
+        // --- SAVE FUNCTION (UPDATED MANUAL INPUT) ---
         function saveSelection() {
             const selected = [];
             
             scannedData.forEach((group, index) => {
                 const groupCheck = document.getElementById(`g-${index}`);
-                const topicChecks = document.querySelectorAll(`.topic-check-${index}:checked`);
+                const manualInput = document.getElementById(`manual-topic-${index}`);
                 
-                // Ambil ID topik yang dicentang
+                // Ambil Topik dari Checkbox
+                const topicChecks = document.querySelectorAll(`.topic-check-${index}:checked`);
                 let selectedTopicIds = [];
                 topicChecks.forEach(cb => selectedTopicIds.push(cb.value));
 
+                // Ambil Topik dari Manual Input
+                if (manualInput && manualInput.value.trim() !== "") {
+                    const manuals = manualInput.value.split(',');
+                    manuals.forEach(m => {
+                        const cleanId = m.trim();
+                        if (cleanId && !isNaN(cleanId)) {
+                            selectedTopicIds.push(cleanId);
+                        }
+                    });
+                }
+
                 // LOGIKA SIMPAN:
-                // 1. Jika Grup dicentang DAN bukan forum (Grup biasa) -> Simpan
-                // 2. Jika Forum DAN ada topik yang dipilih -> Simpan
-                
+                // Simpan jika Grup dicentang ATAU ada topik (manual/checkbox) yang terisi
                 const isGroupSelected = groupCheck.checked;
                 const hasTopicsSelected = selectedTopicIds.length > 0;
 
-                if ((!group.is_forum && isGroupSelected) || (group.is_forum && hasTopicsSelected)) {
+                if (isGroupSelected || hasTopicsSelected) {
                     selected.push({
                         group_id: group.id,
                         group_name: group.name,
@@ -426,7 +458,7 @@
             });
 
             if (selected.length === 0) {
-                alert("⚠️ Belum ada target yang dipilih!\nSilakan centang minimal satu Grup atau Topik.");
+                alert("⚠️ Belum ada target yang dipilih!\nSilakan centang grup atau isi Topik ID manual.");
                 return;
             }
 
@@ -471,6 +503,28 @@
                 document.getElementById('loader').style.display = 'none';
                 alert(json.message);
                 if(json.status === 'success') location.reload();
+            });
+        }
+
+        // --- IMPORT CRM FUNCTION (BARU) ---
+        function importCRM() {
+            if(!confirm("📥 Mulai Import Riwayat Chat?\nBot akan men-scan ribuan chat lama Anda untuk disimpan ke database. Proses ini berjalan di background.")) return;
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerText = "Sedang Memproses...";
+            
+            fetch('/import_crm_api', { method: 'POST' })
+            .then(r => r.json())
+            .then(json => {
+                alert(json.message);
+                btn.disabled = false;
+                btn.innerText = "Mulai Import Sekarang";
+                if(json.status === 'success') location.reload();
+            })
+            .catch(err => {
+                alert("Error: " + err);
+                btn.disabled = false;
             });
         }
     </script>
