@@ -38,8 +38,10 @@ AUTO_REPLY_MSG = (
 )
 AUTO_REPLY_DELAY_HOURS = 6 
 
+# --- GLOBAL VARIABLES ---
 client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
 last_replies = {}
+BOT_LOOP = None # Jembatan Loop untuk Flask
 
 # --- WEB SERVER & PANEL ---
 app = Flask(__name__)
@@ -56,12 +58,16 @@ def dashboard():
                          schedules=schedules.data,
                          targets=targets.data)
 
-# --- FITUR BARU: SCAN GRUP DARI TELEGRAM ---
+# --- FITUR SCAN GRUP (FIXED THREADING) ---
 async def fetch_telegram_dialogs():
     """Mengambil daftar grup dan topik langsung dari akun lu"""
     groups_data = []
     
-    # Ambil semua dialog (limit 100 biar gak berat, bisa dinaikin)
+    # Pastikan client sudah connect
+    if not client.is_connected():
+        await client.connect()
+
+    # Ambil semua dialog (limit 200)
     async for dialog in client.iter_dialogs(limit=200):
         if dialog.is_group:
             entity = dialog.entity
@@ -91,45 +97,41 @@ async def fetch_telegram_dialogs():
 
 @app.route('/scan_groups_api')
 def scan_groups_api():
-    """API Bridge buat Flask manggil fungsi Async Telethon"""
+    """API Bridge dengan FIX EVENT LOOP"""
+    global BOT_LOOP
     try:
-        # Menjalankan fungsi async di dalam event loop bot yang sedang berjalan
-        future = asyncio.run_coroutine_threadsafe(fetch_telegram_dialogs(), client.loop)
+        # Cek apakah loop bot sudah siap
+        if BOT_LOOP is None:
+            return jsonify({"status": "error", "message": "Bot sedang startup, coba 10 detik lagi."})
+
+        # Gunakan BOT_LOOP global yang sudah ditangkap, bukan client.loop
+        future = asyncio.run_coroutine_threadsafe(fetch_telegram_dialogs(), BOT_LOOP)
         result = future.result(timeout=60) # Tunggu max 60 detik
         return jsonify({"status": "success", "data": result})
     except Exception as e:
+        print(f"Scan Error: {e}")
         return jsonify({"status": "error", "message": str(e)})
 
 @app.route('/save_bulk_targets', methods=['POST'])
 def save_bulk_targets():
     """Menyimpan hasil checklist dari panel"""
     try:
-        # Data dikirim via JSON dari Frontend
         data = request.json
         selected_items = data.get('targets', [])
-
-        # Hapus semua target lama (Reset) biar sinkron sama checklist baru
-        # Kalau mau mode 'tambah' (bukan replace), baris ini dihapus/komen aja
-        # supabase.table('blast_targets').delete().neq('id', 0).execute() 
-
         count = 0
+        
         for item in selected_items:
-            # item format: {'group_id': 123, 'group_name': 'abc', 'topic_ids': [1, 2]}
-            
-            # Format topic_ids jadi string "1, 2, 3"
             topics_str = ", ".join(map(str, item['topic_ids']))
             
-            # Cek dulu apakah grup ini udah ada di DB biar gak duplikat
+            # Cek duplikat
             existing = supabase.table('blast_targets').select('id').eq('group_id', item['group_id']).execute()
             
             if existing.data:
-                # Update kalau udah ada
                 supabase.table('blast_targets').update({
                     "topic_ids": topics_str,
                     "group_name": item['group_name']
                 }).eq('group_id', item['group_id']).execute()
             else:
-                # Insert baru
                 supabase.table('blast_targets').insert({
                     "group_name": item['group_name'],
                     "group_id": int(item['group_id']),
@@ -142,7 +144,7 @@ def save_bulk_targets():
         print(f"Error saving: {e}")
         return jsonify({"status": "error", "message": str(e)})
 
-# --- ROUTES JADWAL & HAPUS TARGET (SAMA KEK KEMAREN) ---
+# --- ROUTES JADWAL & HAPUS ---
 @app.route('/add_schedule', methods=['POST'])
 def add_schedule():
     hour = request.form.get('hour')
@@ -163,9 +165,10 @@ def delete_target(id):
 
 def run_web():
     port = int(os.getenv("PORT", 8080))
-    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+    # Threaded=True penting buat handle multiple request di Flask
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
 
-# --- TELETHON EVENTS & LOGIC (SAMA KEK KEMAREN) ---
+# --- TELETHON LOGIC ---
 @client.on(events.NewMessage(incoming=True))
 async def handle_incoming_message(event):
     if not event.is_private: return
@@ -237,6 +240,10 @@ async def auto_forward():
         await asyncio.sleep(30)
 
 async def start_bot():
+    global BOT_LOOP
+    # Tangkap loop yang sedang berjalan SEKARANG dan simpan ke global
+    BOT_LOOP = asyncio.get_running_loop()
+    
     await client.connect()
     if not await client.is_user_authorized():
         print("❌ SESSION INVALID"); return
