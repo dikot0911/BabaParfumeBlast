@@ -8,169 +8,275 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .card-header { background: #fff; border-bottom: 1px solid #eee; border-radius: 12px 12px 0 0 !important; font-weight: bold; color: #333; }
-        .status-success { color: #198754; font-weight: bold; background: #d1e7dd; padding: 2px 8px; border-radius: 4px; }
-        .status-failed { color: #dc3545; font-weight: bold; background: #f8d7da; padding: 2px 8px; border-radius: 4px; }
-        .topic-badge { font-size: 0.8em; margin-right: 4px; margin-bottom: 4px; display: inline-block; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+        .card-header { background: #fff; border-bottom: 1px solid #f0f0f0; border-radius: 12px 12px 0 0 !important; font-weight: 700; color: #333; padding: 15px 20px; }
+        
+        /* Status Badge */
+        .status-success { color: #0f5132; background-color: #d1e7dd; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; }
+        .status-failed { color: #842029; background-color: #f8d7da; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; }
+        
+        /* Topic Styling */
+        .topic-container { background-color: #f8f9fa; border-radius: 8px; padding: 10px; margin-top: 8px; border-left: 4px solid #667eea; }
+        .topic-item { margin-bottom: 4px; }
+        .badge-forum { background-color: #ffc107; color: #000; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
         /* Loader */
-        .spinner-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; }
+        .spinner-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; backdrop-filter: blur(5px); }
+        
+        /* CRM Stats */
+        .crm-stat-box { background: linear-gradient(45deg, #667eea, #764ba2); color: white; border-radius: 12px; padding: 20px; text-align: center; }
+        .crm-stat-number { font-size: 3rem; font-weight: 800; line-height: 1; margin: 10px 0; }
+        .crm-stat-label { text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; opacity: 0.8; }
     </style>
 </head>
 <body>
     <!-- LOADER -->
     <div id="loader" class="spinner-overlay">
-        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
-        <h5 class="mt-3 text-primary">Sedang Scan Grup Telegram...</h5>
-        <p class="text-muted">Mohon tunggu, jangan refresh halaman.</p>
+        <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;"></div>
+        <h4 class="mt-4 text-dark fw-bold">Sedang Memproses...</h4>
+        <p class="text-muted">Bot sedang bekerja, mohon jangan tutup halaman ini.</p>
     </div>
 
-    <nav class="navbar navbar-dark mb-4">
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark mb-4 sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="#"><i class="fas fa-robot me-2"></i>Baba Parfume Auto-Blast</a>
-            <span class="text-white-50">Admin Panel</span>
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-robot me-2"></i>BABA PARFUME <span class="fw-light">Admin</span>
+            </a>
+            <div class="d-flex align-items-center text-white-50">
+                <small><i class="fas fa-circle text-success me-1" style="font-size: 8px;"></i> System Online</small>
+            </div>
         </div>
     </nav>
 
-    <div class="container">
-        <!-- TABS NAVIGASI -->
-        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+    <div class="container pb-5">
+        <!-- TABS MENU -->
+        <ul class="nav nav-pills nav-fill mb-4 gap-2 p-1 bg-white rounded shadow-sm" id="pills-tab" role="tablist">
             <li class="nav-item">
-                <button class="nav-link active" id="pills-log-tab" data-bs-toggle="pill" data-bs-target="#pills-log">📊 Live Logs</button>
+                <button class="nav-link active rounded-pill" id="pills-crm-tab" data-bs-toggle="pill" data-bs-target="#pills-crm">
+                    <i class="fas fa-users me-2"></i>CRM & Follow Up
+                </button>
             </li>
             <li class="nav-item">
-                <button class="nav-link" id="pills-target-tab" data-bs-toggle="pill" data-bs-target="#pills-target">🎯 Target Grup (Scan)</button>
+                <button class="nav-link rounded-pill" id="pills-log-tab" data-bs-toggle="pill" data-bs-target="#pills-log">
+                    <i class="fas fa-chart-line me-2"></i>Live Logs
+                </button>
             </li>
             <li class="nav-item">
-                <button class="nav-link" id="pills-schedule-tab" data-bs-toggle="pill" data-bs-target="#pills-schedule">⏰ Jadwal Blast</button>
+                <button class="nav-link rounded-pill" id="pills-target-tab" data-bs-toggle="pill" data-bs-target="#pills-target">
+                    <i class="fas fa-bullseye me-2"></i>Target & Scan
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link rounded-pill" id="pills-schedule-tab" data-bs-toggle="pill" data-bs-target="#pills-schedule">
+                    <i class="fas fa-clock me-2"></i>Jadwal
+                </button>
             </li>
         </ul>
 
-        <div class="tab-content">
+        <div class="tab-content" id="pills-tabContent">
             
-            <!-- TAB 1: LOGS -->
-            <div class="tab-pane fade show active" id="pills-log">
-                <div class="card">
-                    <div class="card-header">Riwayat Aktivitas Terakhir</div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Waktu (UTC)</th>
-                                        <th>Grup</th>
-                                        <th>Topik</th>
-                                        <th>Status</th>
-                                        <th>Error</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for log in logs %}
-                                    <tr>
-                                        <td class="small text-muted">{{ log.created_at[:19].replace('T', ' ') }}</td>
-                                        <td>{{ log.group_name }}</td>
-                                        <td>{{ log.topic_id or '-' }}</td>
-                                        <td><span class="{{ 'status-success' if log.status == 'SUCCESS' else 'status-failed' }}">{{ log.status }}</span></td>
-                                        <td class="small text-danger">{{ log.error_message or '' }}</td>
-                                    </tr>
-                                    {% else %}
-                                    <tr><td colspan="5" class="text-center py-3">Belum ada log aktivitas.</td></tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+            <!-- TAB 1: CRM SYSTEM -->
+            <div class="tab-pane fade show active" id="pills-crm">
+                <div class="row g-4">
+                    <!-- Stat Box -->
+                    <div class="col-md-4">
+                        <div class="crm-stat-box h-100 shadow">
+                            <i class="fas fa-address-book fa-2x mb-2 opacity-50"></i>
+                            <div class="crm-stat-label">Total Database User</div>
+                            <div class="crm-stat-number">{{ user_count }}</div>
+                            <small>Pelanggan potensial tersimpan</small>
+                        </div>
+                    </div>
+
+                    <!-- Broadcast Form -->
+                    <div class="col-md-8">
+                        <div class="card h-100">
+                            <div class="card-header bg-white text-primary">
+                                <i class="fas fa-paper-plane me-2"></i>Kirim Broadcast / Follow Up
+                            </div>
+                            <div class="card-body">
+                                {% if broadcast_running %}
+                                <div class="alert alert-warning border-0 shadow-sm text-center py-5">
+                                    <h1 class="display-4 mb-3"><i class="fas fa-cog fa-spin text-warning"></i></h1>
+                                    <h4 class="alert-heading fw-bold">Broadcast Sedang Berjalan!</h4>
+                                    <p class="mb-0">Sistem sedang mengirim pesan secara bertahap. Harap tunggu hingga selesai.</p>
+                                </div>
+                                {% else %}
+                                <form id="broadcastForm">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold text-secondary">Isi Pesan Follow Up:</label>
+                                        <textarea class="form-control bg-light" name="message" rows="6" placeholder="Halo {name}, ada promo BABA Parfume spesial hari ini lho!..." style="resize: none;" required></textarea>
+                                        <div class="form-text mt-2">
+                                            <i class="fas fa-info-circle text-info"></i> Gunakan <code>{name}</code> untuk menyebut nama user otomatis.<br>
+                                            <i class="fas fa-shield-alt text-success"></i> Aman: Delay 2-3 detik/pesan + Istirahat tiap 50 pesan.
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="startBroadcast()" class="btn btn-primary w-100 btn-lg rounded-pill shadow-sm">
+                                        <i class="fas fa-rocket me-2"></i>Mulai Broadcast Sekarang
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 2: TARGET GRUP (SCANNER) -->
-            <div class="tab-pane fade" id="pills-target">
-                <div class="card border-primary mb-3">
-                    <div class="card-body bg-light d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="card-title text-primary"><i class="fas fa-satellite-dish me-2"></i>Scanner Grup Telegram</h5>
-                            <p class="card-text small text-muted">Klik tombol Scan untuk mengambil daftar grup dan topik langsung dari akun lu.</p>
-                        </div>
-                        <button onclick="scanTelegram()" class="btn btn-primary btn-lg"><i class="fas fa-sync-alt me-2"></i>Scan Grup Sekarang</button>
+            <!-- TAB 2: LIVE LOGS -->
+            <div class="tab-pane fade" id="pills-log">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-history me-2"></i>Riwayat Aktivitas Terakhir</span>
+                        <button onclick="location.reload()" class="btn btn-sm btn-outline-secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4">Waktu (UTC)</th>
+                                    <th>Target Grup</th>
+                                    <th>Topik ID</th>
+                                    <th>Status</th>
+                                    <th>Pesan Error</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in logs %}
+                                <tr>
+                                    <td class="ps-4 text-muted small">{{ log.created_at[:19].replace('T', ' ') }}</td>
+                                    <td class="fw-bold text-dark">{{ log.group_name }}</td>
+                                    <td><span class="badge bg-secondary text-light">{{ log.topic_id or 'General' }}</span></td>
+                                    <td>
+                                        <span class="{{ 'status-success' if log.status == 'SUCCESS' else 'status-failed' }}">
+                                            {{ log.status }}
+                                        </span>
+                                    </td>
+                                    <td class="text-danger small">{{ log.error_message or '-' }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-center py-5 text-muted">Belum ada aktivitas tercatat.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
+            </div>
 
-                <div class="row">
-                    <!-- KOLOM KIRI: DAFTAR GRUP TERDAFTAR (DATABASE) -->
-                    <div class="col-md-5">
+            <!-- TAB 3: TARGET & SCANNER (FOKUS PERBAIKAN DI SINI) -->
+            <div class="tab-pane fade" id="pills-target">
+                <div class="row g-4">
+                    <!-- KIRI: LIST TARGET AKTIF -->
+                    <div class="col-lg-5">
                         <div class="card h-100">
-                            <div class="card-header">Target Aktif (Database)</div>
+                            <div class="card-header text-success">
+                                <i class="fas fa-check-circle me-2"></i>Target Tersimpan (Database)
+                            </div>
                             <div class="card-body p-0">
                                 <ul class="list-group list-group-flush">
                                     {% for target in targets %}
-                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <strong>{{ target.group_name }}</strong>
-                                            <div class="small text-muted">ID: {{ target.group_id }}</div>
-                                            {% if target.topic_ids %}
-                                            <div class="mt-1">
-                                                {% for t in target.topic_ids.split(',') %}
-                                                <span class="badge bg-info text-dark topic-badge">Topik: {{ t }}</span>
-                                                {% endfor %}
+                                    <li class="list-group-item p-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1 fw-bold text-dark">{{ target.group_name }}</h6>
+                                                <div class="small text-muted mb-2"><i class="fas fa-id-badge me-1"></i>{{ target.group_id }}</div>
+                                                {% if target.topic_ids %}
+                                                    {% for t in target.topic_ids.split(',') %}
+                                                    <span class="badge bg-info text-dark border border-info-subtle me-1 mb-1">Topik: {{ t }}</span>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <span class="badge bg-light text-dark border">General / Non-Topic</span>
+                                                {% endif %}
                                             </div>
-                                            {% endif %}
+                                            <a href="/delete_target/{{ target.id }}" class="btn btn-outline-danger btn-sm rounded-circle" style="width: 32px; height: 32px; padding: 0; line-height: 30px;" onclick="return confirm('Hapus target ini?')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
                                         </div>
-                                        <a href="/delete_target/{{ target.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus?')"><i class="fas fa-trash"></i></a>
                                     </li>
                                     {% else %}
-                                    <li class="list-group-item text-center text-muted">Belum ada target tersimpan. Scan dulu!</li>
+                                    <li class="list-group-item text-center py-5 text-muted">
+                                        <i class="fas fa-folder-open fa-2x mb-3 d-block opacity-25"></i>
+                                        Belum ada target.<br>Silakan Scan di sebelah kanan!
+                                    </li>
                                     {% endfor %}
                                 </ul>
                             </div>
                         </div>
                     </div>
 
-                    <!-- KOLOM KANAN: HASIL SCAN (CHECKBOX) -->
-                    <div class="col-md-7">
-                        <div class="card h-100 border-success">
-                            <div class="card-header bg-success text-white d-flex justify-content-between">
-                                <span>Hasil Scan (Pilih Target)</span>
-                                <button onclick="saveSelection()" class="btn btn-sm btn-light text-success fw-bold">Simpan Pilihan</button>
+                    <!-- KANAN: SCANNER -->
+                    <div class="col-lg-7">
+                        <div class="card border-primary h-100">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-satellite-dish me-2"></i>Scanner Telegram</span>
+                                <button onclick="saveSelection()" class="btn btn-light btn-sm fw-bold text-primary shadow-sm">
+                                    <i class="fas fa-save me-1"></i> Simpan Pilihan
+                                </button>
                             </div>
-                            <div class="card-body" id="scan-results-area">
-                                <p class="text-center text-muted py-5">Klik tombol "Scan Grup Sekarang" di atas untuk memunculkan data.</p>
+                            <div class="card-body bg-light">
+                                <div class="text-center mb-3">
+                                    <button onclick="scanTelegram()" class="btn btn-primary btn-lg rounded-pill px-5 shadow">
+                                        <i class="fas fa-sync-alt me-2"></i>Scan Grup Sekarang
+                                    </button>
+                                    <p class="small text-muted mt-2">Klik tombol di atas untuk mengambil daftar grup terbaru dari akun Anda.</p>
+                                </div>
+                                <hr>
+                                <!-- HASIL SCAN AKAN MUNCUL DI SINI -->
+                                <div id="scan-results-area" class="bg-white rounded border p-2" style="max-height: 500px; overflow-y: auto;">
+                                    <div class="text-center py-5 text-muted opacity-50">
+                                        <i class="fab fa-telegram fa-3x mb-3"></i><br>
+                                        Hasil scan akan muncul di sini...
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 3: JADWAL -->
+            <!-- TAB 4: JADWAL -->
             <div class="tab-pane fade" id="pills-schedule">
-                <div class="row">
+                <div class="row g-4">
                     <div class="col-md-4">
                         <div class="card">
-                            <div class="card-header">Tambah Jadwal</div>
+                            <div class="card-header text-primary"><i class="fas fa-plus-circle me-2"></i>Tambah Jadwal</div>
                             <div class="card-body">
                                 <form action="/add_schedule" method="POST">
-                                    <div class="row">
-                                        <div class="col-6 mb-3"><label>Jam (0-23)</label><input type="number" name="hour" class="form-control" required></div>
-                                        <div class="col-6 mb-3"><label>Menit (0-59)</label><input type="number" name="minute" class="form-control" value="0"></div>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold">Jam (0-23)</label>
+                                            <input type="number" name="hour" class="form-control" placeholder="09" required min="0" max="23">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small fw-bold">Menit</label>
+                                            <input type="number" name="minute" class="form-control" value="0" min="0" max="59">
+                                        </div>
                                     </div>
-                                    <button type="submit" class="btn btn-primary w-100">Tambah</button>
+                                    <div class="form-text mb-3 small text-danger"><i class="fas fa-exclamation-triangle"></i> Waktu Server = UTC (WIB -7 jam).</div>
+                                    <button type="submit" class="btn btn-primary w-100">Simpan Jadwal</button>
                                 </form>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-8">
                         <div class="card">
-                            <div class="card-header">Jadwal Aktif</div>
+                            <div class="card-header"><i class="fas fa-clock me-2"></i>Jadwal Aktif</div>
                             <div class="card-body">
-                                <div class="row">
+                                <div class="row g-3">
                                     {% for s in schedules %}
-                                    <div class="col-3 mb-3">
-                                        <div class="border rounded p-2 text-center position-relative">
-                                            <h4 class="mb-0">{{ '%02d' % s.run_hour }}:{{ '%02d' % s.run_minute }}</h4>
-                                            <small class="text-muted">UTC</small>
-                                            <a href="/delete_schedule/{{ s.id }}" class="position-absolute top-0 end-0 text-danger p-1"><i class="fas fa-times"></i></a>
+                                    <div class="col-6 col-md-3">
+                                        <div class="position-relative border rounded p-3 text-center bg-light">
+                                            <h3 class="mb-0 fw-bold text-dark">{{ '%02d' % s.run_hour }}:{{ '%02d' % s.run_minute }}</h3>
+                                            <span class="badge bg-secondary">UTC</span>
+                                            <a href="/delete_schedule/{{ s.id }}" class="position-absolute top-0 end-0 m-1 text-danger p-1" onclick="return confirm('Hapus jadwal ini?')">
+                                                <i class="fas fa-times-circle"></i>
+                                            </a>
                                         </div>
                                     </div>
+                                    {% else %}
+                                    <div class="col-12 text-center text-muted py-4">Belum ada jadwal blasting.</div>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -178,109 +284,156 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+
+        </div> <!-- End Tab Content -->
+    </div> <!-- End Container -->
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // --- GLOBAL VARIABLES ---
         let scannedData = [];
 
+        // --- SCANNER FUNCTION (PERBAIKAN UTAMA DI SINI) ---
         function scanTelegram() {
-            document.getElementById('loader').style.display = 'flex';
+            const loader = document.getElementById('loader');
+            const resultArea = document.getElementById('scan-results-area');
+            
+            loader.style.display = 'flex'; // Show loader
+            
             fetch('/scan_groups_api')
                 .then(response => response.json())
                 .then(json => {
-                    document.getElementById('loader').style.display = 'none';
+                    loader.style.display = 'none'; // Hide loader
+                    
                     if(json.status === 'success') {
                         renderScanResults(json.data);
                     } else {
-                        alert("Gagal scan: " + json.message);
+                        resultArea.innerHTML = `<div class="alert alert-danger m-3"><i class="fas fa-exclamation-triangle me-2"></i>Gagal Scan: ${json.message}</div>`;
                     }
                 })
                 .catch(err => {
-                    document.getElementById('loader').style.display = 'none';
-                    alert("Error koneksi: " + err);
+                    loader.style.display = 'none';
+                    resultArea.innerHTML = `<div class="alert alert-danger m-3"><i class="fas fa-wifi me-2"></i>Error Koneksi: ${err}</div>`;
                 });
         }
 
         function renderScanResults(data) {
             scannedData = data;
             const container = document.getElementById('scan-results-area');
+            
             if (data.length === 0) {
-                container.innerHTML = '<p class="text-center">Tidak ditemukan grup.</p>';
+                container.innerHTML = '<div class="text-center py-5 text-muted">Tidak ditemukan grup Telegram. Pastikan akun sudah join grup.</div>';
                 return;
             }
 
-            let html = '<div class="list-group">';
+            let html = '<div class="list-group list-group-flush">';
+            
             data.forEach((group, index) => {
+                // Logic cek apakah forum punya topik atau kosong
+                const hasTopics = group.is_forum && group.topics && group.topics.length > 0;
+                
                 html += `
-                <div class="list-group-item">
+                <div class="list-group-item px-2 py-3 border-bottom">
                     <div class="d-flex align-items-center">
-                        <input class="form-check-input me-3 group-checkbox" type="checkbox" id="g-${index}" value="${index}" onchange="toggleTopics(${index})">
-                        <div class="flex-grow-1">
-                            <label class="form-check-label fw-bold d-block" for="g-${index}">${group.name}</label>
-                            <small class="text-muted">ID: ${group.id}</small>
+                        <div class="form-check me-2">
+                            <input class="form-check-input" type="checkbox" style="transform: scale(1.2);" id="g-${index}" value="${index}" onchange="toggleTopics(${index})">
                         </div>
-                        ${group.is_forum ? '<span class="badge bg-warning text-dark">Forum</span>' : ''}
+                        <div class="flex-grow-1">
+                            <label class="form-check-label fw-bold text-dark d-block" for="g-${index}" style="cursor: pointer;">
+                                ${group.name}
+                            </label>
+                            <small class="text-muted d-flex align-items-center">
+                                <i class="fas fa-fingerprint me-1"></i> ${group.id}
+                                ${group.is_forum ? '<span class="badge badge-forum ms-2"><i class="fas fa-comments me-1"></i>Forum</span>' : ''}
+                            </small>
+                        </div>
                     </div>
                     
-                    ${group.is_forum && group.topics.length > 0 ? `
-                    <div class="ms-4 mt-2 ps-3 border-start topic-container" id="topics-${index}">
-                        <small class="text-muted d-block mb-1">Pilih Topik:</small>
-                        ${group.topics.map(t => `
-                            <div class="form-check">
-                                <input class="form-check-input topic-check-${index}" type="checkbox" value="${t.id}" id="t-${t.id}">
-                                <label class="form-check-label" for="t-${t.id}">${t.title} (${t.id})</label>
-                            </div>
-                        `).join('')}
-                    </div>
+                    <!-- AREA TOPIK FORUM -->
+                    ${group.is_forum ? `
+                        <div class="topic-container ms-4 mt-2" id="topics-${index}">
+                            ${hasTopics ? `
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="fw-bold text-secondary">Pilih Topik Target:</small>
+                                    <small class="text-primary" style="cursor:pointer;" onclick="toggleTopics(${index}, true)">Pilih Semua</small>
+                                </div>
+                                <div class="row g-2">
+                                    ${group.topics.map(t => `
+                                        <div class="col-12">
+                                            <div class="form-check bg-white border rounded px-3 py-2">
+                                                <input class="form-check-input topic-check-${index}" type="checkbox" value="${t.id}" id="t-${t.id}">
+                                                <label class="form-check-label w-100 small" for="t-${t.id}" style="cursor: pointer;">
+                                                    ${t.title} <span class="text-muted ms-1">(${t.id})</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : `
+                                <div class="alert alert-warning py-2 small mb-0">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    <strong>Tidak ada topik ditemukan.</strong><br>
+                                    Kemungkinan bot belum admin atau tidak ada topik yang 'Open'.
+                                </div>
+                            `}
+                        </div>
                     ` : ''}
                 </div>`;
             });
+            
             html += '</div>';
             container.innerHTML = html;
         }
 
-        function toggleTopics(index) {
+        function toggleTopics(index, forceAll = false) {
             const groupCheck = document.getElementById(`g-${index}`);
+            // Kalau diklik "Pilih Semua", centang grup masternya juga
+            if (forceAll) groupCheck.checked = true;
+            
             const topicChecks = document.querySelectorAll(`.topic-check-${index}`);
-            topicChecks.forEach(cb => cb.checked = groupCheck.checked);
+            topicChecks.forEach(cb => {
+                // Centang topik mengikuti status centang grup
+                cb.checked = groupCheck.checked;
+            });
         }
 
+        // --- SAVE FUNCTION ---
         function saveSelection() {
             const selected = [];
             
             scannedData.forEach((group, index) => {
                 const groupCheck = document.getElementById(`g-${index}`);
-                if (!groupCheck.checked) {
-                    // Cek apakah ada topik yang dicentang manual meskipun grupnya gak dicentang master-nya
-                    const topicChecks = document.querySelectorAll(`.topic-check-${index}:checked`);
-                    if (topicChecks.length === 0) return;
-                }
-
-                // Ambil topik yang dicentang
+                const topicChecks = document.querySelectorAll(`.topic-check-${index}:checked`);
+                
+                // Ambil ID topik yang dicentang
                 let selectedTopicIds = [];
-                if (group.is_forum) {
-                    const topicChecks = document.querySelectorAll(`.topic-check-${index}:checked`);
-                    topicChecks.forEach(cb => selectedTopicIds.push(cb.value));
-                    
-                    // Kalau forum tapi gak ada topik yang dipilih, skip grup ini
-                    if (selectedTopicIds.length === 0) return;
-                }
+                topicChecks.forEach(cb => selectedTopicIds.push(cb.value));
 
-                selected.push({
-                    group_id: group.id,
-                    group_name: group.name,
-                    topic_ids: selectedTopicIds
-                });
+                // LOGIKA SIMPAN:
+                // 1. Jika Grup dicentang DAN bukan forum (Grup biasa) -> Simpan
+                // 2. Jika Forum DAN ada topik yang dipilih -> Simpan
+                
+                const isGroupSelected = groupCheck.checked;
+                const hasTopicsSelected = selectedTopicIds.length > 0;
+
+                if ((!group.is_forum && isGroupSelected) || (group.is_forum && hasTopicsSelected)) {
+                    selected.push({
+                        group_id: group.id,
+                        group_name: group.name,
+                        topic_ids: selectedTopicIds
+                    });
+                }
             });
 
             if (selected.length === 0) {
-                alert("Pilih minimal satu grup atau topik!");
+                alert("⚠️ Belum ada target yang dipilih!\nSilakan centang minimal satu Grup atau Topik.");
                 return;
             }
 
+            if(!confirm(`Simpan ${selected.length} grup/target ke database?`)) return;
+
             document.getElementById('loader').style.display = 'flex';
+            
             fetch('/save_bulk_targets', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -290,11 +443,34 @@
             .then(json => {
                 document.getElementById('loader').style.display = 'none';
                 if(json.status === 'success') {
-                    alert("Berhasil! " + json.message);
+                    alert("✅ " + json.message);
                     location.reload();
                 } else {
-                    alert("Gagal: " + json.message);
+                    alert("❌ Gagal: " + json.message);
                 }
+            })
+            .catch(err => {
+                document.getElementById('loader').style.display = 'none';
+                alert("❌ Error Server: " + err);
+            });
+        }
+
+        // --- BROADCAST FUNCTION ---
+        function startBroadcast() {
+            const form = document.getElementById('broadcastForm');
+            const formData = new FormData(form);
+            
+            if(!formData.get('message')) return alert("⚠️ Pesan tidak boleh kosong!");
+            if(!confirm("🚀 Yakin mau memulai Broadcast?\nIni akan mengirim pesan ke SEMUA user yang ada di database.")) return;
+            
+            document.getElementById('loader').style.display = 'flex';
+            fetch('/start_broadcast', {
+                method: 'POST',
+                body: formData
+            }).then(r => r.json()).then(json => {
+                document.getElementById('loader').style.display = 'none';
+                alert(json.message);
+                if(json.status === 'success') location.reload();
             });
         }
     </script>
