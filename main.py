@@ -37,11 +37,14 @@ AUTO_REPLY_MSG = (
     "Kalo belum punya aroma personal, biar mimin bantu rekomendasiin ya ^^"
 )
 AUTO_REPLY_DELAY_HOURS = 6 
+DB_UPDATE_INTERVAL_HOURS = 1 # Update database 'last_interaction' max 1 jam sekali biar gak spam DB
 
 # --- GLOBAL VARIABLES ---
 client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
-last_replies = {}
-BOT_LOOP = None # Jembatan Loop untuk Flask
+last_replies = {} # Cache untuk Auto Reply
+user_db_cache = {} # Cache untuk Database Saver (Biar hemat request)
+BOT_LOOP = None 
+BROADCAST_RUNNING = False # Flag status broadcast
 
 # --- WEB SERVER & PANEL ---
 app = Flask(__name__)
@@ -49,108 +52,159 @@ app.secret_key = 'baba_parfume_super_secret'
 
 @app.route('/')
 def dashboard():
-    logs = supabase.table('blast_logs').select("*").order('created_at', desc=True).limit(20).execute()
+    logs = supabase.table('blast_logs').select("*").order('created_at', desc=True).limit(10).execute()
     schedules = supabase.table('blast_schedules').select("*").order('run_hour').execute()
     targets = supabase.table('blast_targets').select("*").order('created_at').execute()
     
+    # Hitung total user CRM
+    try:
+        user_count = supabase.table('tele_users').select("user_id", count='exact').execute().count
+    except:
+        user_count = 0
+        
     return render_template('index.html', 
                          logs=logs.data, 
                          schedules=schedules.data,
-                         targets=targets.data)
+                         targets=targets.data,
+                         user_count=user_count,
+                         broadcast_running=BROADCAST_RUNNING)
 
-# --- FITUR SCAN GRUP (FIXED THREADING) ---
+# --- FITUR 1: SCAN GRUP (UPDATED DEBUGGING) ---
 async def fetch_telegram_dialogs():
-    """Mengambil daftar grup dan topik langsung dari akun lu"""
     groups_data = []
+    if not client.is_connected(): await client.connect()
     
-    # Pastikan client sudah connect
-    if not client.is_connected():
-        await client.connect()
-
-    # Ambil semua dialog (limit 200)
-    async for dialog in client.iter_dialogs(limit=200):
+    print("🔄 Memulai Scan Grup Telegram...")
+    
+    # Naikkan limit dialog biar grup yang tenggelam juga keambil
+    async for dialog in client.iter_dialogs(limit=300):
         if dialog.is_group:
             entity = dialog.entity
+            is_forum = getattr(entity, 'forum', False)
+            
             g_data = {
-                'id': entity.id,
-                'name': entity.title,
-                'is_forum': getattr(entity, 'forum', False),
+                'id': entity.id, 
+                'name': entity.title, 
+                'is_forum': is_forum, 
                 'topics': []
             }
-
-            # Kalau grupnya Forum/Topic-based, scan topiknya
-            if g_data['is_forum']:
+            
+            # Logika Scan Topik yang lebih detail
+            if is_forum:
+                print(f"🔍 Forum Ditemukan: {entity.title}")
                 try:
-                    # Ambil topik yang aktif/open
-                    topics = await client.get_forum_topics(entity, limit=30)
-                    for t in topics.topics:
-                        g_data['topics'].append({
-                            'id': t.id,
-                            'title': t.title
-                        })
+                    # Naikkan limit topik jadi 50
+                    topics = await client.get_forum_topics(entity, limit=50)
+                    if topics and topics.topics:
+                        for t in topics.topics:
+                            g_data['topics'].append({'id': t.id, 'title': t.title})
+                        print(f"   ✅ Sukses ambil {len(g_data['topics'])} topik.")
+                    else:
+                        print("   ⚠️ Tidak ada topik terbuka/ditemukan.")
                 except Exception as e:
-                    print(f"⚠️ Gagal fetch topik {entity.title}: {e}")
+                    print(f"   ❌ Gagal fetch topik {entity.title}: {e}")
             
             groups_data.append(g_data)
             
+    print(f"✅ Scan Selesai. {len(groups_data)} grup ditemukan.")
     return groups_data
 
 @app.route('/scan_groups_api')
 def scan_groups_api():
-    """API Bridge dengan FIX EVENT LOOP"""
     global BOT_LOOP
     try:
-        # Cek apakah loop bot sudah siap
-        if BOT_LOOP is None:
-            return jsonify({"status": "error", "message": "Bot sedang startup, coba 10 detik lagi."})
-
-        # Gunakan BOT_LOOP global yang sudah ditangkap, bukan client.loop
+        if BOT_LOOP is None: return jsonify({"status": "error", "message": "Bot startup..."})
         future = asyncio.run_coroutine_threadsafe(fetch_telegram_dialogs(), BOT_LOOP)
-        result = future.result(timeout=60) # Tunggu max 60 detik
-        return jsonify({"status": "success", "data": result})
-    except Exception as e:
-        print(f"Scan Error: {e}")
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({"status": "success", "data": future.result(timeout=60)})
+    except Exception as e: return jsonify({"status": "error", "message": str(e)})
 
+# --- FITUR 2: SAVE TARGETS ---
 @app.route('/save_bulk_targets', methods=['POST'])
 def save_bulk_targets():
-    """Menyimpan hasil checklist dari panel"""
     try:
         data = request.json
-        selected_items = data.get('targets', [])
-        count = 0
-        
-        for item in selected_items:
+        selected = data.get('targets', [])
+        for item in selected:
             topics_str = ", ".join(map(str, item['topic_ids']))
-            
-            # Cek duplikat
-            existing = supabase.table('blast_targets').select('id').eq('group_id', item['group_id']).execute()
-            
-            if existing.data:
-                supabase.table('blast_targets').update({
-                    "topic_ids": topics_str,
-                    "group_name": item['group_name']
-                }).eq('group_id', item['group_id']).execute()
+            exist = supabase.table('blast_targets').select('id').eq('group_id', item['group_id']).execute()
+            if exist.data:
+                supabase.table('blast_targets').update({"topic_ids": topics_str, "group_name": item['group_name']}).eq('group_id', item['group_id']).execute()
             else:
-                supabase.table('blast_targets').insert({
-                    "group_name": item['group_name'],
-                    "group_id": int(item['group_id']),
-                    "topic_ids": topics_str
-                }).execute()
-            count += 1
-            
-        return jsonify({"status": "success", "message": f"{count} Grup berhasil disimpan!"})
-    except Exception as e:
-        print(f"Error saving: {e}")
-        return jsonify({"status": "error", "message": str(e)})
+                supabase.table('blast_targets').insert({"group_name": item['group_name'], "group_id": int(item['group_id']), "topic_ids": topics_str}).execute()
+        return jsonify({"status": "success", "message": "Disimpan!"})
+    except Exception as e: return jsonify({"status": "error", "message": str(e)})
 
-# --- ROUTES JADWAL & HAPUS ---
+# --- FITUR 3: CRM BROADCAST / FOLLOW UP ---
+async def run_broadcast_task(message_text):
+    global BROADCAST_RUNNING
+    BROADCAST_RUNNING = True
+    print("📢 MULAI BROADCAST FOLLOW UP...")
+    
+    try:
+        # 1. Ambil semua user dari Database
+        # Note: Kalau user jutaan, perlu pagination. Tapi untuk ribuan, fetch all masih oke.
+        response = supabase.table('tele_users').select("user_id, first_name").execute()
+        users = response.data
+        
+        total_users = len(users)
+        sent_count = 0
+        batch_size = 50
+        
+        print(f"🎯 Target Broadcast: {total_users} users")
+
+        for i in range(0, total_users, batch_size):
+            batch = users[i:i+batch_size]
+            print(f"🚀 Mengirim Batch {i+1} sampai {i+len(batch)}...")
+            
+            for user in batch:
+                try:
+                    # Ganti {name} dengan nama user kalau ada di template
+                    final_msg = message_text.replace("{name}", user.get('first_name') or "Kak")
+                    
+                    await client.send_message(int(user['user_id']), final_msg)
+                    sent_count += 1
+                    
+                    # Human Delay (2-3 detik)
+                    await asyncio.sleep(random.uniform(2.0, 3.5))
+                    
+                except Exception as e:
+                    print(f"❌ Gagal kirim ke {user['user_id']}: {e}")
+                    # Kalau diblokir user, bisa opsi hapus dari DB (opsional)
+            
+            # Istirahat Batch (2 menit)
+            if i + batch_size < total_users:
+                print("☕ Istirahat 2 menit biar aman...")
+                await asyncio.sleep(120)
+                
+        print(f"✅ BROADCAST SELESAI. Terkirim: {sent_count}/{total_users}")
+        
+    except Exception as e:
+        print(f"❌ Error Broadcast Fatal: {e}")
+    finally:
+        BROADCAST_RUNNING = False
+
+@app.route('/start_broadcast', methods=['POST'])
+def start_broadcast():
+    global BOT_LOOP, BROADCAST_RUNNING
+    
+    if BROADCAST_RUNNING:
+        return jsonify({"status": "error", "message": "Broadcast sedang berjalan! Tunggu sampai selesai."})
+        
+    message = request.form.get('message')
+    if not message:
+        return jsonify({"status": "error", "message": "Pesan tidak boleh kosong!"})
+        
+    if BOT_LOOP:
+        asyncio.run_coroutine_threadsafe(run_broadcast_task(message), BOT_LOOP)
+        return jsonify({"status": "success", "message": "Broadcast dimulai di background!"})
+    else:
+        return jsonify({"status": "error", "message": "Bot belum siap."})
+
+# --- BASIC ROUTES ---
 @app.route('/add_schedule', methods=['POST'])
 def add_schedule():
-    hour = request.form.get('hour')
-    minute = request.form.get('minute')
-    if hour:
-        supabase.table('blast_schedules').insert({"run_hour": int(hour), "run_minute": int(minute)}).execute()
+    h, m = request.form.get('hour'), request.form.get('minute')
+    if h: supabase.table('blast_schedules').insert({"run_hour": int(h), "run_minute": int(m)}).execute()
     return redirect(url_for('dashboard'))
 
 @app.route('/delete_schedule/<int:id>')
@@ -165,10 +219,9 @@ def delete_target(id):
 
 def run_web():
     port = int(os.getenv("PORT", 8080))
-    # Threaded=True penting buat handle multiple request di Flask
     app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False, threaded=True)
 
-# --- TELETHON LOGIC ---
+# --- TELETHON LOGIC (UPDATED WITH CRM) ---
 @client.on(events.NewMessage(incoming=True))
 async def handle_incoming_message(event):
     if not event.is_private: return
@@ -177,6 +230,24 @@ async def handle_incoming_message(event):
     
     sender_id = sender.id
     now = datetime.now()
+    
+    # === LOGIC 1: SAVE USER TO SUPABASE (CRM) ===
+    # Cek cache lokal dulu biar gak jebol DB
+    should_update_db = False
+    
+    if sender_id not in user_db_cache:
+        should_update_db = True
+    else:
+        # Cek apakah sudah lewat 1 jam dari update terakhir
+        if now - user_db_cache[sender_id] > timedelta(hours=DB_UPDATE_INTERVAL_HOURS):
+            should_update_db = True
+            
+    if should_update_db:
+        # Jalankan di background task biar gak nge-block reply
+        asyncio.create_task(save_user_to_db(sender_id, sender.username, sender.first_name))
+        user_db_cache[sender_id] = now # Update cache lokal
+
+    # === LOGIC 2: AUTO REPLY ===
     if sender_id in last_replies:
         if now - last_replies[sender_id] < timedelta(hours=AUTO_REPLY_DELAY_HOURS):
             return
@@ -188,28 +259,46 @@ async def handle_incoming_message(event):
         print(f"📩 Auto-Reply: {sender.first_name}")
     except: pass
 
-def log_to_db(group_name, group_id, topic_id, status, error_msg=""):
+async def save_user_to_db(uid, uname, fname):
+    """Upsert User ke Supabase (Insert or Update)"""
     try:
-        supabase.table('blast_logs').insert({
-            "group_name": group_name,
-            "group_id": group_id,
-            "topic_id": topic_id,
-            "status": status,
-            "error_message": str(error_msg)
-        }).execute()
-    except Exception as e: print(f"DB Log Error: {e}")
+        # Cek user ada atau belum
+        res = supabase.table('tele_users').select('user_id').eq('user_id', uid).execute()
+        
+        data = {
+            "user_id": uid,
+            "username": uname,
+            "first_name": fname,
+            "last_interaction": datetime.utcnow().isoformat()
+        }
+        
+        if res.data:
+            # Update last interaction
+            supabase.table('tele_users').update(data).eq('user_id', uid).execute()
+            # print(f"🔄 CRM: User {fname} updated.")
+        else:
+            # Insert new user
+            supabase.table('tele_users').insert(data).execute()
+            print(f"🆕 CRM: User Baru Tersimpan! {fname}")
+            
+    except Exception as e:
+        print(f"⚠️ CRM Save Error: {e}")
+
+# --- AUTO BLAST ---
+def log_to_db(g_name, g_id, t_id, status, err=""):
+    try:
+        supabase.table('blast_logs').insert({"group_name": g_name, "group_id": g_id, "topic_id": t_id, "status": status, "error_message": str(err)}).execute()
+    except: pass
 
 async def auto_forward():
-    print(f"🚀 Userbot Standby. Panel Ready.")
+    print(f"🚀 Userbot Standby. CRM & Panel Ready.")
     last_run_time = None
-    
     while True:
         now = datetime.now()
-        current_time_str = f"{now.hour}:{now.minute}"
+        cur_time = f"{now.hour}:{now.minute}"
         
         try:
-            sched_res = supabase.table('blast_schedules').select("*").eq('is_active', True).execute()
-            schedules = sched_res.data
+            schedules = supabase.table('blast_schedules').select("*").eq('is_active', True).execute().data
         except: schedules = []
 
         is_time = False
@@ -217,8 +306,8 @@ async def auto_forward():
             if s['run_hour'] == now.hour and s['run_minute'] == now.minute:
                 is_time = True; break
         
-        if is_time and current_time_str != last_run_time:
-            print(f"\n--- ⏰ BLASTING START: {current_time_str} ---")
+        if is_time and cur_time != last_run_time:
+            print(f"\n--- ⏰ BLASTING START: {cur_time} ---")
             try:
                 targets = supabase.table('blast_targets').select("*").eq('is_active', True).execute().data
                 if targets:
@@ -235,18 +324,15 @@ async def auto_forward():
                                     await asyncio.sleep(random.randint(45, 90))
                                 except Exception as e:
                                     log_to_db(target['group_name'], target['group_id'], t_id, "FAILED", str(e))
-                        last_run_time = current_time_str
+                        last_run_time = cur_time
             except Exception as e: print(f"Blast Error: {e}")
         await asyncio.sleep(30)
 
 async def start_bot():
     global BOT_LOOP
-    # Tangkap loop yang sedang berjalan SEKARANG dan simpan ke global
     BOT_LOOP = asyncio.get_running_loop()
-    
     await client.connect()
-    if not await client.is_user_authorized():
-        print("❌ SESSION INVALID"); return
+    if not await client.is_user_authorized(): return
     print("✅ BOT CONNECTED")
     await auto_forward()
 
