@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 # --- TELETHON & SUPABASE ---
-from telethon import TelegramClient, events
+from telethon import TelegramClient, events, errors
 from telethon.sessions import StringSession
 from supabase import create_client, Client
 
@@ -47,25 +47,28 @@ SOURCE_CHAT_ID = int(os.getenv('SOURCE_CHAT_ID', '0'))
 SOURCE_MSG_ID = int(os.getenv('SOURCE_MSG_ID', '0'))
 
 # --- PENGATURAN BOT ---
+# Auto Reply dengan Inline Link (Markdown) - Versi Perfect
 AUTO_REPLY_MSG = (
     "Selamat datang di Baba Parfume! ✨\n\n"
     "Lagi cari aroma apa nih kak? Untuk cewe apa cowo? "
-    "Kalo belum punya aroma personal, biar mimin bantu rekomendasiin ya ^^"
+    "Kalo belum punya aroma personal, biar mimin bantu rekomendasiin ya ^^\n\n"
+    "👇 *Katalog Lengkap & Testimoni:*\n"
+    "[KLIK DISINI YA KAK](https://t.me/GantiUsernameChannelMu)"
 )
 AUTO_REPLY_DELAY_HOURS = 6    # Jeda waktu auto-reply ke user yang sama
-DB_UPDATE_INTERVAL_HOURS = 1  # Jeda update data user ke DB (biar hemat request)
+DB_UPDATE_INTERVAL_HOURS = 1  # Jeda update data user ke DB
 TIMEZONE_OFFSET = 7           # WIB (UTC+7)
 
 # --- GLOBAL VARIABLES ---
 client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
-last_replies = {}    # Cache waktu reply terakhir: {user_id: datetime}
-user_db_cache = {}   # Cache update DB terakhir: {user_id: datetime}
+last_replies = {}    # Cache waktu reply terakhir
+user_db_cache = {}   # Cache update DB terakhir
 BOT_LOOP = None      # Event Loop Asyncio
 BROADCAST_RUNNING = False 
 
 # --- FLASK APP ---
 app = Flask(__name__)
-app.secret_key = 'baba_parfume_super_secret_key_v2'
+app.secret_key = 'baba_parfume_super_secret_key_v3_final'
 
 # ==========================================
 # BAGIAN 1: HELPER FUNCTIONS (DATABASE & UTILS)
@@ -100,7 +103,7 @@ async def save_user_to_db(uid, uname, fname):
             "user_id": uid,
             "username": uname,
             "first_name": fname,
-            "last_interaction": datetime.utcnow().isoformat() # Simpan UTC di DB standar
+            "last_interaction": datetime.utcnow().isoformat()
         }
         
         if res.data:
@@ -111,6 +114,23 @@ async def save_user_to_db(uid, uname, fname):
             
     except Exception as e:
         logger.error(f"⚠️ CRM Save Error: {e}")
+
+async def get_entity_safe(entity_id):
+    """
+    Fungsi SAKTI untuk mencari Entity (User/Grup) dengan aman.
+    Mencegah error 'PeerUser/PeerChannel not found'.
+    """
+    try:
+        # 1. Cek Cache Lokal (Cepat)
+        return await client.get_input_entity(entity_id)
+    except:
+        try:
+            # 2. Force Fetch dari Server Telegram (Lambat tapi Akurat)
+            # logger.info(f"🔍 Fetching entity {entity_id} from network...")
+            return await client.get_entity(entity_id)
+        except Exception as e:
+            logger.error(f"❌ Entity {entity_id} benar-benar tidak ditemukan: {e}")
+            return None
 
 # ==========================================
 # BAGIAN 2: FLASK ROUTES (WEB DASHBOARD)
@@ -151,8 +171,8 @@ async def fetch_telegram_dialogs():
     if not client.is_connected(): await client.connect()
     
     logger.info("🔄 Memulai Scan Grup Telegram...")
-    # Limit dinaikkan ke 400 untuk menjangkau grup lama
-    async for dialog in client.iter_dialogs(limit=400):
+    # Limit dinaikkan ke 500 agar grup lama terdeteksi
+    async for dialog in client.iter_dialogs(limit=500):
         if dialog.is_group:
             entity = dialog.entity
             is_forum = getattr(entity, 'forum', False)
@@ -207,7 +227,6 @@ def save_bulk_targets():
             topics_str = ", ".join(map(str, topics_list))
             
             # Upsert Target
-            exist = supabase.table('blast_targets').select('id').eq('group_id', item['group_id']).execute()
             payload = {
                 "group_name": item['group_name'],
                 "group_id": int(item['group_id']),
@@ -215,6 +234,7 @@ def save_bulk_targets():
                 "is_active": True
             }
             
+            exist = supabase.table('blast_targets').select('id').eq('group_id', item['group_id']).execute()
             if exist.data:
                 supabase.table('blast_targets').update(payload).eq('group_id', item['group_id']).execute()
             else:
@@ -275,18 +295,27 @@ async def run_broadcast_task(message_text):
             logger.info(f"🚀 Batch {i+1} - {i+len(batch)}...")
 
             for user in batch:
-                try:
-                    # Personalisasi nama
-                    u_name = user.get('first_name') or "Kak"
-                    final_msg = message_text.replace("{name}", u_name)
-                    
-                    await client.send_message(int(user['user_id']), final_msg)
-                    sent_count += 1
-                    
-                    # Human Delay Random (Penting!)
-                    await asyncio.sleep(random.uniform(2.0, 4.0))
-                except Exception as e:
-                    logger.error(f"❌ Gagal kirim ke {user['user_id']}: {e}")
+                target_user_id = int(user['user_id'])
+                # Gunakan helper get_entity_safe untuk mencegah error PeerUser
+                receiver_entity = await get_entity_safe(target_user_id)
+
+                if receiver_entity:
+                    try:
+                        # Personalisasi nama
+                        u_name = user.get('first_name') or "Kak"
+                        final_msg = message_text.replace("{name}", u_name)
+                        
+                        await client.send_message(receiver_entity, final_msg)
+                        sent_count += 1
+                        
+                        # Human Delay Random (Penting!)
+                        await asyncio.sleep(random.uniform(2.5, 4.5))
+                        
+                    except errors.FloodWaitError as e:
+                        logger.warning(f"⏳ Kena FloodWait {e.seconds} detik. Tidur dulu...")
+                        await asyncio.sleep(e.seconds + 5)
+                    except Exception as e:
+                        logger.error(f"❌ Gagal kirim ke {target_user_id}: {e}")
             
             # Istirahat Panjang antar Batch
             if i + batch_size < total_users:
@@ -367,18 +396,24 @@ async def handle_incoming_message(event):
         await asyncio.sleep(random.randint(2, 4))
         
     try:
-        await event.reply(AUTO_REPLY_MSG)
+        await event.reply(AUTO_REPLY_MSG, link_preview=True)
         last_replies[sender_id] = now
         logger.info(f"📩 Auto-Reply terkirim ke: {sender.first_name}")
     except Exception as e:
         logger.error(f"Gagal Auto-Reply: {e}")
 
 async def auto_blast_loop():
-    """Loop Utama untuk Auto Blast Terjadwal (WIB)"""
+    """Loop Utama untuk Auto Blast Terjadwal (WIB) - MAXIMIZED VERSION"""
     logger.info(f"🚀 Blast Service Standby. Mode: WIB (UTC+{TIMEZONE_OFFSET})")
     last_run_time_str = None
     
     while True:
+        # --- SAFETY 1: CHECK CONNECTION ---
+        if not client.is_connected():
+            logger.warning("🔌 Koneksi terputus. Mencoba connect ulang...")
+            try: await client.connect()
+            except: pass
+
         # Hitung waktu WIB sekarang
         wib_now = get_wib_time()
         cur_time_str = f"{wib_now.hour}:{wib_now.minute}"
@@ -399,55 +434,77 @@ async def auto_blast_loop():
         if is_scheduled and cur_time_str != last_run_time_str:
             logger.info(f"\n--- ⏰ JADWAL BLAST DIEKSEKUSI (WIB): {cur_time_str} ---")
             
-            # Ambil Pesan Sumber
             if SOURCE_CHAT_ID == 0 or SOURCE_MSG_ID == 0:
                 logger.error("❌ SOURCE_CHAT_ID atau SOURCE_MSG_ID belum diset di .env")
             else:
-                try:
-                    targets = supabase.table('blast_targets').select("*").eq('is_active', True).execute().data
-                    
-                    if targets:
-                        # Ambil objek pesan asli
-                        msg_source = await client.get_messages(SOURCE_CHAT_ID, ids=SOURCE_MSG_ID)
+                # --- SAFETY 2: PREPARE SOURCE ENTITY ---
+                # Pastikan bot mengenali sumber pesan (Chat ID/Saved Messages)
+                source_entity = await get_entity_safe(SOURCE_CHAT_ID)
+                
+                if not source_entity:
+                    logger.error(f"❌ Gagal Blast: Source Chat ID {SOURCE_CHAT_ID} tidak ditemukan/bot lupa. Coba pancing chat.")
+                    # Skip putaran ini, tapi set last_run biar ga spam error tiap detik
+                    last_run_time_str = cur_time_str 
+                else:
+                    try:
+                        targets = supabase.table('blast_targets').select("*").eq('is_active', True).execute().data
                         
-                        if msg_source:
-                            random.shuffle(targets) # Acak urutan biar natural
+                        if targets:
+                            # Ambil objek pesan asli
+                            msg_source = await client.get_messages(source_entity, ids=SOURCE_MSG_ID)
                             
-                            for target in targets:
-                                # Parsing Topic IDs
-                                raw_topics = target.get('topic_ids', '')
-                                t_ids = [int(x.strip()) for x in raw_topics.split(',') if x.strip().isdigit()] if raw_topics else [None]
+                            if msg_source:
+                                random.shuffle(targets) # Acak urutan biar natural
                                 
-                                for t_id in t_ids:
-                                    try:
-                                        # PENGIRIMAN: Gunakan send_message dengan objek pesan
-                                        # Ini mengcopy konten (text+media) dan mendukung reply_to (untuk topik)
-                                        await client.send_message(
-                                            target['group_id'], 
-                                            msg_source, 
-                                            reply_to=t_id
-                                        )
-                                        
-                                        log_to_db(target['group_name'], target['group_id'], t_id, "SUCCESS")
-                                        logger.info(f"✅ Sent to {target['group_name']} (Topic: {t_id})")
-                                        
-                                        # Delay antar grup/topik
-                                        await asyncio.sleep(random.randint(45, 90))
-                                        
-                                    except Exception as e:
-                                        err_msg = str(e)
-                                        log_to_db(target['group_name'], target['group_id'], t_id, "FAILED", err_msg)
-                                        logger.error(f"❌ Failed {target['group_name']}: {err_msg}")
-                            
-                            # Update penanda waktu agar tidak lari 2x dalam 1 menit
-                            last_run_time_str = cur_time_str
+                                for target in targets:
+                                    # Parsing Topic IDs
+                                    raw_topics = target.get('topic_ids', '')
+                                    t_ids = [int(x.strip()) for x in raw_topics.split(',') if x.strip().isdigit()] if raw_topics else [None]
+                                    
+                                    # --- SAFETY 3: PREPARE TARGET ENTITY ---
+                                    # Pastikan bot mengenali Grup Tujuan
+                                    target_group_id = target['group_id']
+                                    target_entity = await get_entity_safe(target_group_id)
+
+                                    if not target_entity:
+                                        err_msg = f"Bot tidak mengenali Grup ID {target_group_id}. Coba pancing dengan chat manual."
+                                        log_to_db(target['group_name'], target_group_id, 0, "FAILED", err_msg)
+                                        continue
+                                    
+                                    for t_id in t_ids:
+                                        try:
+                                            # PENGIRIMAN:
+                                            await client.send_message(
+                                                target_entity, 
+                                                msg_source, 
+                                                reply_to=t_id
+                                            )
+                                            
+                                            log_to_db(target['group_name'], target['group_id'], t_id, "SUCCESS")
+                                            logger.info(f"✅ Sent to {target['group_name']} (Topic: {t_id})")
+                                            
+                                            # Delay antar grup/topik
+                                            await asyncio.sleep(random.randint(45, 90))
+                                            
+                                        except errors.FloodWaitError as e:
+                                            logger.warning(f"⏳ Kena FloodWait saat Blast {e.seconds} detik...")
+                                            log_to_db(target['group_name'], target['group_id'], t_id, "FLOODWAIT", f"Wait {e.seconds}s")
+                                            await asyncio.sleep(e.seconds + 5)
+
+                                        except Exception as e:
+                                            err_msg = str(e)
+                                            log_to_db(target['group_name'], target['group_id'], t_id, "FAILED", err_msg)
+                                            logger.error(f"❌ Failed {target['group_name']}: {err_msg}")
+                                
+                                # Update penanda waktu
+                                last_run_time_str = cur_time_str
+                            else:
+                                logger.error("⚠️ Pesan Sumber (Source Message) tidak ditemukan atau terhapus!")
                         else:
-                            logger.error("⚠️ Pesan Sumber (Source Message) tidak ditemukan atau terhapus!")
-                    else:
-                        logger.warning("⚠️ Tidak ada target grup aktif di Database.")
-                        
-                except Exception as e:
-                    logger.error(f"❌ Blast Error Fatal: {e}")
+                            logger.warning("⚠️ Tidak ada target grup aktif di Database.")
+                            
+                    except Exception as e:
+                        logger.error(f"❌ Blast Error Fatal: {e}")
         
         # Cek setiap 20 detik
         await asyncio.sleep(20)
