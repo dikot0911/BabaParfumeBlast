@@ -2,5 +2,3 @@ telethon
 python-dotenv
 flask
 supabase
-pip
-install
