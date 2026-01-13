@@ -3,172 +3,501 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baba Parfume Admin</title>
+    <title>Baba Parfume | Ultimate Admin Panel</title>
+    
+    <!-- FONTS & ICONS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- BOOTSTRAP 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-2px); }
-        .card-header { background: #fff; border-bottom: 1px solid #f0f0f0; border-radius: 12px 12px 0 0 !important; font-weight: 700; color: #333; padding: 15px 20px; }
-        
-        /* Status Badge */
-        .status-success { color: #0f5132; background-color: #d1e7dd; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; }
-        .status-failed { color: #842029; background-color: #f8d7da; padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; }
-        
-        /* Topic Styling */
-        .topic-container { background-color: #f8f9fa; border-radius: 8px; padding: 10px; margin-top: 8px; border-left: 4px solid #667eea; }
-        .topic-item { margin-bottom: 4px; }
-        .badge-forum { background-color: #ffc107; color: #000; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    <!-- ANIMATE CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 
-        /* Loader */
-        .spinner-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; backdrop-filter: blur(5px); }
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --secondary-gradient: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
+            --danger-gradient: linear-gradient(135deg, #ef4444 0%, #f43f5e 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23e5e7eb' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            color: #1f2937;
+            padding-bottom: 80px;
+        }
+
+        /* --- NAVBAR --- */
+        .navbar-custom {
+            background: var(--primary-gradient);
+            padding: 1rem 0;
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.2);
+        }
+        .navbar-brand {
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            font-size: 1.5rem;
+        }
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #34d399;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px #34d399;
+            animation: pulse 2s infinite;
+        }
+
+        /* --- CARDS & PANELS --- */
+        .card-custom {
+            background: var(--glass-bg);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+        .card-custom:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--hover-shadow);
+        }
+        .card-header-custom {
+            background: transparent;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            font-weight: 700;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card-body-custom {
+            padding: 1.5rem;
+        }
+
+        /* --- TABS --- */
+        .nav-pills .nav-link {
+            border-radius: 12px;
+            padding: 12px 20px;
+            font-weight: 600;
+            color: #6b7280;
+            background: white;
+            margin: 0 5px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .nav-pills .nav-link.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            transform: scale(1.02);
+        }
+        .nav-pills .nav-link:hover:not(.active) {
+            background: #f9fafb;
+            color: #4f46e5;
+            border-color: #e5e7eb;
+        }
+
+        /* --- BUTTONS --- */
+        .btn-custom {
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-primary-gradient {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+        }
+        .btn-primary-gradient:hover {
+            background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%);
+            color: white;
+            box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
+            transform: translateY(-1px);
+        }
+        .btn-success-gradient {
+            background: var(--success-gradient);
+            color: white;
+        }
+        .btn-danger-gradient {
+            background: var(--danger-gradient);
+            color: white;
+        }
+        .btn-action-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
         
-        /* CRM Stats */
-        .crm-stat-box { background: linear-gradient(45deg, #667eea, #764ba2); color: white; border-radius: 12px; padding: 20px; text-align: center; }
-        .crm-stat-number { font-size: 3rem; font-weight: 800; line-height: 1; margin: 10px 0; }
-        .crm-stat-label { text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; opacity: 0.8; }
+        /* --- PROGRESS BARS --- */
+        .progress-custom {
+            height: 12px;
+            border-radius: 6px;
+            background-color: #e5e7eb;
+            overflow: hidden;
+        }
+        .progress-bar-animated-custom {
+            background: var(--secondary-gradient);
+            background-size: 200% 200%;
+            animation: gradientMove 3s ease infinite;
+        }
+
+        /* --- STATUS BADGES --- */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .badge-idle { background-color: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+        .badge-running { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; animation: pulse-green 2s infinite; }
+        .badge-paused { background-color: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+        .badge-stopped { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+        /* --- LOADER & TOAST --- */
+        .loader-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .toast-container { z-index: 10000; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
     </style>
 </head>
 <body>
-    <!-- LOADER -->
-    <div id="loader" class="spinner-overlay">
-        <div class="spinner-border text-primary" role="status" style="width: 4rem; height: 4rem;"></div>
-        <h4 class="mt-4 text-dark fw-bold">Sedang Memproses...</h4>
-        <p class="text-muted">Bot sedang bekerja, mohon jangan tutup halaman ini.</p>
+
+    <!-- OVERLAY LOADER -->
+    <div id="globalLoader" class="loader-overlay animate__animated animate__fadeIn">
+        <div class="spinner-border text-primary mb-3" style="width: 4rem; height: 4rem; border-width: 4px;" role="status"></div>
+        <h4 class="fw-bold text-dark">Sedang Memproses...</h4>
+        <p class="text-muted">Mohon tunggu sebentar, jangan tutup halaman ini.</p>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <!-- Toasts will be injected here via JS -->
     </div>
 
     <!-- NAVBAR -->
-    <nav class="navbar navbar-dark mb-4 sticky-top">
+    <nav class="navbar navbar-custom navbar-dark sticky-top mb-4">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">
-                <i class="fas fa-robot me-2"></i>BABA PARFUME <span class="fw-light">Admin</span>
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <i class="fa-solid fa-robot me-3 fa-lg"></i>
+                <div>
+                    <div>BABA PARFUME</div>
+                    <div style="font-size: 0.7rem; font-weight: 400; opacity: 0.8; letter-spacing: 1px;">ULTIMATE ADMIN PANEL</div>
+                </div>
             </a>
-            <div class="d-flex align-items-center text-white-50">
-                <small><i class="fas fa-circle text-success me-1" style="font-size: 8px;"></i> System Online</small>
+            <div class="d-flex align-items-center text-white bg-white bg-opacity-10 px-3 py-2 rounded-pill">
+                <div class="status-dot me-2"></div>
+                <span class="small fw-bold">System Online</span>
+                <span class="mx-2 opacity-50">|</span>
+                <span class="small" id="clock-wib">--:-- WIB</span>
             </div>
         </div>
     </nav>
 
-    <div class="container pb-5">
+    <div class="container">
+        
         <!-- TABS MENU -->
-        <ul class="nav nav-pills nav-fill mb-4 gap-2 p-1 bg-white rounded shadow-sm" id="pills-tab" role="tablist">
-            <li class="nav-item">
-                <button class="nav-link active rounded-pill" id="pills-crm-tab" data-bs-toggle="pill" data-bs-target="#pills-crm">
-                    <i class="fas fa-users me-2"></i>CRM & Follow Up
+        <ul class="nav nav-pills nav-fill mb-5" id="mainTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="crm-tab" data-bs-toggle="pill" data-bs-target="#crm-content" type="button">
+                    <i class="fas fa-rocket me-2"></i>CRM & Blast Ops
                 </button>
             </li>
-            <li class="nav-item">
-                <button class="nav-link rounded-pill" id="pills-log-tab" data-bs-toggle="pill" data-bs-target="#pills-log">
-                    <i class="fas fa-chart-line me-2"></i>Live Logs
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="logs-tab" data-bs-toggle="pill" data-bs-target="#logs-content" type="button">
+                    <i class="fas fa-list-ul me-2"></i>Live Logs
                 </button>
             </li>
-            <li class="nav-item">
-                <button class="nav-link rounded-pill" id="pills-target-tab" data-bs-toggle="pill" data-bs-target="#pills-target">
-                    <i class="fas fa-bullseye me-2"></i>Target & Scan
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="targets-tab" data-bs-toggle="pill" data-bs-target="#targets-content" type="button">
+                    <i class="fas fa-bullseye me-2"></i>Target & Scanner
                 </button>
             </li>
-            <li class="nav-item">
-                <button class="nav-link rounded-pill" id="pills-schedule-tab" data-bs-toggle="pill" data-bs-target="#pills-schedule">
-                    <i class="fas fa-clock me-2"></i>Jadwal
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="schedule-tab" data-bs-toggle="pill" data-bs-target="#schedule-content" type="button">
+                    <i class="fas fa-calendar-alt me-2"></i>Penjadwalan
                 </button>
             </li>
         </ul>
 
-        <div class="tab-content" id="pills-tabContent">
-            
-            <!-- TAB 1: CRM SYSTEM -->
-            <div class="tab-pane fade show active" id="pills-crm">
+        <!-- TABS CONTENT -->
+        <div class="tab-content" id="mainTabContent">
+
+            <!-- ======================= TAB 1: CRM & BLAST OPS ======================= -->
+            <div class="tab-pane fade show active" id="crm-content">
                 <div class="row g-4">
-                    <!-- Stat Box -->
-                    <div class="col-md-4">
-                        <div class="crm-stat-box h-100 shadow mb-3">
-                            <i class="fas fa-address-book fa-2x mb-2 opacity-50"></i>
-                            <div class="crm-stat-label">Total Database User</div>
-                            <div class="crm-stat-number">{{ user_count }}</div>
-                            <small>Pelanggan potensial tersimpan</small>
+                    
+                    <!-- LEFT COLUMN: STATS & IMPORT -->
+                    <div class="col-lg-4">
+                        <!-- Stat Card -->
+                        <div class="card-custom mb-4 text-white" style="background: var(--primary-gradient); border: none;">
+                            <div class="card-body-custom text-center">
+                                <div class="mb-2 opacity-75 text-uppercase" style="font-size: 0.75rem; letter-spacing: 1px;">Total Database User</div>
+                                <h1 class="display-3 fw-bold mb-0">{{ user_count }}</h1>
+                                <div class="mt-2 badge bg-white bg-opacity-20 rounded-pill px-3">Pelanggan Potensial</div>
+                            </div>
                         </div>
-                        
-                        <!-- TOMBOL IMPORT BARU -->
-                        <div class="card shadow-sm border-info">
-                            <div class="card-body text-center">
-                                <h6 class="fw-bold text-info"><i class="fas fa-cloud-download-alt me-2"></i>Import Data Lama</h6>
-                                <p class="small text-muted mb-2">Scan semua chat personal (DM) yang ada di Telegram dan simpan ke Database.</p>
-                                <button onclick="importCRM()" class="btn btn-outline-info w-100 rounded-pill">
-                                    Mulai Import Sekarang
+
+                        <!-- Import Card -->
+                        <div class="card-custom mb-4">
+                            <div class="card-body-custom text-center">
+                                <div class="mb-3">
+                                    <div class="bg-info bg-opacity-10 text-info d-inline-flex p-3 rounded-circle mb-2">
+                                        <i class="fas fa-cloud-download-alt fa-2x"></i>
+                                    </div>
+                                    <h5 class="fw-bold">Import Riwayat Chat</h5>
+                                    <p class="text-muted small">Scan pesan pribadi (DM) lama untuk menambah database CRM Anda.</p>
+                                </div>
+                                <button onclick="importCRM()" class="btn btn-outline-primary w-100 rounded-pill fw-bold">
+                                    <i class="fas fa-sync me-2"></i>Mulai Import
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- Guide Card -->
+                        <div class="card-custom">
+                            <div class="card-header-custom">
+                                <span><i class="fas fa-info-circle me-2 text-primary"></i>Panduan</span>
+                            </div>
+                            <div class="card-body-custom pt-0">
+                                <div class="accordion accordion-flush" id="faqAccordion">
+                                    <div class="accordion-item bg-transparent">
+                                        <h2 class="accordion-header">
+                                            <button class="accordion-button collapsed bg-transparent shadow-none px-0" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                                <small class="fw-bold">Apa bedanya Blast & Broadcast?</small>
+                                            </button>
+                                        </h2>
+                                        <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                            <div class="accordion-body px-0 text-muted small">
+                                                <strong>Blast:</strong> Mengirim pesan ke Grup/Forum yang ditargetkan.<br>
+                                                <strong>Broadcast:</strong> Mengirim pesan personal (PM) ke user di database CRM.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Broadcast Form -->
-                    <div class="col-md-8">
-                        <div class="card h-100">
-                            <div class="card-header bg-white text-primary">
-                                <i class="fas fa-paper-plane me-2"></i>Kirim Broadcast / Follow Up
+                    <!-- RIGHT COLUMN: OPERATIONS CENTER -->
+                    <div class="col-lg-8">
+                        
+                        <!-- 1. BLAST CONTROL CENTER (NEW FEATURE) -->
+                        <div class="card-custom mb-4 border-start border-4 border-primary">
+                            <div class="card-header-custom bg-white">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary text-white p-2 rounded me-3">
+                                        <i class="fas fa-satellite-dish"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0 fw-bold">Blast Operations Center</h5>
+                                        <small class="text-muted">Kontrol pengiriman pesan ke Grup/Forum</small>
+                                    </div>
+                                </div>
+                                <div id="blastStatusBadge">
+                                    <span class="status-badge badge-idle">IDLE</span>
+                                </div>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body-custom">
+                                <!-- Progress Info -->
+                                <div class="row mb-3 align-items-end">
+                                    <div class="col-md-6">
+                                        <label class="small text-muted fw-bold mb-1">TARGET SAAT INI</label>
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-users text-primary me-2"></i>
+                                            <span id="currentGroupTarget" class="fw-bold text-dark text-truncate">Menunggu antrian...</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                                        <div class="d-flex justify-content-md-end gap-3">
+                                            <div class="text-center">
+                                                <div class="h4 fw-bold text-success mb-0" id="successCount">0</div>
+                                                <div class="small text-muted" style="font-size: 0.65rem;">SUKSES</div>
+                                            </div>
+                                            <div class="text-center border-start ps-3">
+                                                <div class="h4 fw-bold text-danger mb-0" id="failCount">0</div>
+                                                <div class="small text-muted" style="font-size: 0.65rem;">GAGAL</div>
+                                            </div>
+                                            <div class="text-center border-start ps-3">
+                                                <div class="h4 fw-bold text-dark mb-0" id="totalTargets">0</div>
+                                                <div class="small text-muted" style="font-size: 0.65rem;">TOTAL</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Progress Bar -->
+                                <div class="mb-4">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span class="text-muted">Progress Keseluruhan</span>
+                                        <span class="fw-bold text-primary" id="progressPercentage">0%</span>
+                                    </div>
+                                    <div class="progress progress-custom">
+                                        <div id="blastProgressBar" class="progress-bar progress-bar-animated-custom" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Control Buttons -->
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <button onclick="controlBlast('start')" class="btn btn-primary-gradient btn-custom flex-grow-1">
+                                        <i class="fas fa-play me-2"></i>START / RESUME
+                                    </button>
+                                    <button onclick="controlBlast('pause')" class="btn btn-warning btn-custom text-dark flex-grow-1" style="background: #fde047; border:none;">
+                                        <i class="fas fa-pause me-2"></i>PAUSE
+                                    </button>
+                                    <button onclick="confirmStopBlast()" class="btn btn-danger-gradient btn-custom flex-grow-1">
+                                        <i class="fas fa-stop me-2"></i>STOP
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. BROADCAST (CRM) SECTION -->
+                        <div class="card-custom">
+                            <div class="card-header-custom">
+                                <span><i class="fas fa-paper-plane me-2 text-success"></i>Broadcast / Follow Up (Personal)</span>
+                            </div>
+                            <div class="card-body-custom">
                                 {% if broadcast_running %}
-                                <div class="alert alert-warning border-0 shadow-sm text-center py-5">
-                                    <h1 class="display-4 mb-3"><i class="fas fa-cog fa-spin text-warning"></i></h1>
-                                    <h4 class="alert-heading fw-bold">Broadcast Sedang Berjalan!</h4>
-                                    <p class="mb-0">Sistem sedang mengirim pesan secara bertahap. Harap tunggu hingga selesai.</p>
+                                <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4">
+                                    <div class="spinner-border text-warning me-3" role="status"></div>
+                                    <div>
+                                        <h5 class="alert-heading fw-bold mb-1">Broadcast Sedang Berjalan!</h5>
+                                        <p class="mb-0 small opacity-75">Sistem sedang mengirim pesan personal secara bertahap. Harap tunggu.</p>
+                                    </div>
                                 </div>
                                 {% else %}
                                 <form id="broadcastForm">
                                     <div class="mb-3">
-                                        <label class="form-label fw-bold text-secondary">Isi Pesan Follow Up:</label>
-                                        <textarea class="form-control bg-light" name="message" rows="6" placeholder="Halo {name}, ada promo BABA Parfume spesial hari ini lho!..." style="resize: none;" required></textarea>
-                                        <div class="form-text mt-2">
-                                            <i class="fas fa-info-circle text-info"></i> Gunakan <code>{name}</code> untuk menyebut nama user otomatis.<br>
-                                            <i class="fas fa-shield-alt text-success"></i> Aman: Delay 2-3 detik/pesan + Istirahat tiap 50 pesan.
+                                        <label class="form-label fw-bold text-secondary small text-uppercase">Isi Pesan</label>
+                                        <div class="position-relative">
+                                            <textarea class="form-control bg-light border-0 py-3 px-3" name="message" rows="5" placeholder="Halo {name}, mau info promo spesial nih..." style="resize: none; border-radius: 12px;" required></textarea>
+                                            <div class="position-absolute bottom-0 end-0 p-2">
+                                                <small class="badge bg-white text-secondary shadow-sm border">Markdown Supported</small>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between mt-2">
+                                            <small class="text-muted"><i class="fas fa-code me-1"></i>Gunakan <code>{name}</code> untuk nama user.</small>
+                                            <small class="text-success"><i class="fas fa-shield-alt me-1"></i>Safe Mode Active</small>
                                         </div>
                                     </div>
-                                    <button type="button" onclick="startBroadcast()" class="btn btn-primary w-100 btn-lg rounded-pill shadow-sm">
-                                        <i class="fas fa-rocket me-2"></i>Mulai Broadcast Sekarang
+                                    <button type="button" onclick="startBroadcast()" class="btn btn-success-gradient btn-custom w-100">
+                                        <i class="fas fa-share me-2"></i>Kirim Broadcast Sekarang
                                     </button>
                                 </form>
                                 {% endif %}
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
 
-            <!-- TAB 2: LIVE LOGS -->
-            <div class="tab-pane fade" id="pills-log">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <span><i class="fas fa-history me-2"></i>Riwayat Aktivitas Terakhir</span>
-                        <button onclick="location.reload()" class="btn btn-sm btn-outline-secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
+            <!-- ======================= TAB 2: LIVE LOGS ======================= -->
+            <div class="tab-pane fade" id="logs-content">
+                <div class="card-custom h-100">
+                    <div class="card-header-custom">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-history me-2 text-primary"></i>
+                            <span>Riwayat Aktivitas</span>
+                        </div>
+                        <button onclick="location.reload()" class="btn btn-sm btn-light shadow-sm border rounded-pill px-3">
+                            <i class="fas fa-sync-alt me-1"></i> Refresh
+                        </button>
                     </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light">
+                            <thead class="bg-light text-secondary small text-uppercase">
                                 <tr>
-                                    <th class="ps-4">Waktu (WIB)</th>
-                                    <th>Target Grup</th>
-                                    <th>Topik ID</th>
-                                    <th>Status</th>
-                                    <th>Pesan Error</th>
+                                    <th class="ps-4 py-3">Waktu</th>
+                                    <th class="py-3">Target Group</th>
+                                    <th class="py-3">Topic ID</th>
+                                    <th class="py-3">Status</th>
+                                    <th class="py-3">Detail</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for log in logs %}
-                                <tr>
-                                    <td class="ps-4 text-muted small">{{ log.created_at[:19].replace('T', ' ') }}</td>
-                                    <td class="fw-bold text-dark">{{ log.group_name }}</td>
-                                    <td><span class="badge bg-secondary text-light">{{ log.topic_id or 'General' }}</span></td>
-                                    <td>
-                                        <span class="{{ 'status-success' if log.status == 'SUCCESS' else 'status-failed' }}">
-                                            {{ log.status }}
-                                        </span>
+                                <tr class="border-bottom-0">
+                                    <td class="ps-4">
+                                        <div class="fw-bold text-dark">{{ log.created_at[11:19] }}</div>
+                                        <div class="small text-muted" style="font-size: 0.7rem;">{{ log.created_at[:10] }}</div>
                                     </td>
-                                    <td class="text-danger small">{{ log.error_message or '-' }}</td>
+                                    <td class="fw-bold text-primary">{{ log.group_name }}</td>
+                                    <td>
+                                        {% if log.topic_id %}
+                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">{{ log.topic_id }}</span>
+                                        {% else %}
+                                            <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.status == 'SUCCESS' %}
+                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2"><i class="fas fa-check me-1"></i>SUKSES</span>
+                                        {% elif 'RETRY' in log.status %}
+                                            <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2"><i class="fas fa-redo me-1"></i>RETRY</span>
+                                        {% elif 'FLOOD' in log.status %}
+                                            <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2"><i class="fas fa-clock me-1"></i>WAIT</span>
+                                        {% else %}
+                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2"><i class="fas fa-times me-1"></i>GAGAL</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted text-truncate d-inline-block" style="max-width: 150px;">{{ log.error_message or 'Terkirim dengan aman.' }}</small>
+                                    </td>
                                 </tr>
                                 {% else %}
-                                <tr><td colspan="5" class="text-center py-5 text-muted">Belum ada aktivitas tercatat.</td></tr>
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">
+                                        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" width="60" class="mb-3 opacity-25">
+                                        <p class="text-muted">Belum ada log aktivitas.</p>
+                                    </td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -176,40 +505,43 @@
                 </div>
             </div>
 
-            <!-- TAB 3: TARGET & SCANNER (FOKUS PERBAIKAN DI SINI) -->
-            <div class="tab-pane fade" id="pills-target">
+            <!-- ======================= TAB 3: TARGET & SCANNER ======================= -->
+            <div class="tab-pane fade" id="targets-content">
                 <div class="row g-4">
-                    <!-- KIRI: LIST TARGET AKTIF -->
+                    <!-- LIST TARGET -->
                     <div class="col-lg-5">
-                        <div class="card h-100">
-                            <div class="card-header text-success">
-                                <i class="fas fa-check-circle me-2"></i>Target Tersimpan (Database)
+                        <div class="card-custom h-100">
+                            <div class="card-header-custom text-success">
+                                <span><i class="fas fa-database me-2"></i>Database Target</span>
+                                <span class="badge bg-success rounded-pill">{{ targets|length }} Active</span>
                             </div>
-                            <div class="card-body p-0">
+                            <div class="card-body-custom p-0" style="max-height: 600px; overflow-y: auto;">
                                 <ul class="list-group list-group-flush">
                                     {% for target in targets %}
-                                    <li class="list-group-item p-3">
-                                        <div class="d-flex justify-content-between align-items-start">
-                                            <div>
-                                                <h6 class="mb-1 fw-bold text-dark">{{ target.group_name }}</h6>
-                                                <div class="small text-muted mb-2"><i class="fas fa-id-badge me-1"></i>{{ target.group_id }}</div>
-                                                {% if target.topic_ids %}
-                                                    {% for t in target.topic_ids.split(',') %}
-                                                    <span class="badge bg-info text-dark border border-info-subtle me-1 mb-1">Topik: {{ t }}</span>
-                                                    {% endfor %}
-                                                {% else %}
-                                                    <span class="badge bg-light text-dark border">General / Non-Topic</span>
-                                                {% endif %}
+                                    <li class="list-group-item p-3 border-bottom-0 border-top">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="overflow-hidden me-3">
+                                                <h6 class="mb-1 fw-bold text-dark text-truncate">{{ target.group_name }}</h6>
+                                                <div class="small text-muted mb-2 font-monospace">{{ target.group_id }}</div>
+                                                <div class="d-flex flex-wrap gap-1">
+                                                    {% if target.topic_ids %}
+                                                        {% for t in target.topic_ids.split(',') %}
+                                                        <span class="badge bg-light text-dark border small">{{ t }}</span>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <span class="badge bg-light text-muted border small">General</span>
+                                                    {% endif %}
+                                                </div>
                                             </div>
-                                            <a href="/delete_target/{{ target.id }}" class="btn btn-outline-danger btn-sm rounded-circle" style="width: 32px; height: 32px; padding: 0; line-height: 30px;" onclick="return confirm('Hapus target ini?')">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
+                                            <button onclick="confirmDeleteTarget('{{ target.id }}', '{{ target.group_name }}')" class="btn btn-sm btn-outline-danger btn-action-icon rounded-circle shadow-sm">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
                                         </div>
                                     </li>
                                     {% else %}
-                                    <li class="list-group-item text-center py-5 text-muted">
-                                        <i class="fas fa-folder-open fa-2x mb-3 d-block opacity-25"></i>
-                                        Belum ada target.<br>Silakan Scan di sebelah kanan!
+                                    <li class="list-group-item text-center py-5 border-0">
+                                        <i class="fas fa-folder-open fa-3x mb-3 text-muted opacity-25"></i>
+                                        <p class="text-muted">Database target kosong.<br>Lakukan scan di sebelah kanan.</p>
                                     </li>
                                     {% endfor %}
                                 </ul>
@@ -217,28 +549,34 @@
                         </div>
                     </div>
 
-                    <!-- KANAN: SCANNER -->
+                    <!-- SCANNER -->
                     <div class="col-lg-7">
-                        <div class="card border-primary h-100">
-                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                                <span><i class="fas fa-satellite-dish me-2"></i>Scanner Telegram</span>
-                                <button onclick="saveSelection()" class="btn btn-light btn-sm fw-bold text-primary shadow-sm">
+                        <div class="card-custom border-primary border-2 h-100">
+                            <div class="card-header-custom bg-primary bg-opacity-10 text-primary">
+                                <span><i class="fas fa-radar me-2"></i>Telegram Scanner</span>
+                                <button onclick="saveSelection()" class="btn btn-sm btn-primary shadow-sm fw-bold">
                                     <i class="fas fa-save me-1"></i> Simpan Pilihan
                                 </button>
                             </div>
-                            <div class="card-body bg-light">
-                                <div class="text-center mb-3">
-                                    <button onclick="scanTelegram()" class="btn btn-primary btn-lg rounded-pill px-5 shadow">
-                                        <i class="fas fa-sync-alt me-2"></i>Scan Grup Sekarang
+                            <div class="card-body-custom bg-light">
+                                <div class="text-center mb-4">
+                                    <button onclick="scanTelegram()" class="btn btn-primary-gradient btn-lg rounded-pill px-5 shadow-lg animate__animated animate__pulse animate__infinite infinite">
+                                        <i class="fas fa-search-location me-2"></i>Scan Grup Terbaru
                                     </button>
-                                    <p class="small text-muted mt-2">Klik tombol di atas untuk mengambil daftar grup terbaru dari akun Anda.</p>
+                                    <p class="text-muted small mt-2">Bot akan membaca seluruh grup & forum yang Anda ikuti.</p>
                                 </div>
-                                <hr>
-                                <!-- HASIL SCAN AKAN MUNCUL DI SINI -->
-                                <div id="scan-results-area" class="bg-white rounded border p-2" style="max-height: 500px; overflow-y: auto;">
-                                    <div class="text-center py-5 text-muted opacity-50">
-                                        <i class="fab fa-telegram fa-3x mb-3"></i><br>
-                                        Hasil scan akan muncul di sini...
+
+                                <!-- Search Filter -->
+                                <div class="input-group mb-3 shadow-sm">
+                                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="scanFilter" class="form-control border-start-0 ps-0" placeholder="Cari nama grup..." onkeyup="filterScanResults()">
+                                </div>
+
+                                <!-- Scan Results Area -->
+                                <div id="scan-results-area" class="bg-white rounded-3 shadow-sm border p-2" style="height: 400px; overflow-y: auto;">
+                                    <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted opacity-50">
+                                        <i class="fab fa-telegram fa-4x mb-3"></i>
+                                        <p>Hasil scan akan muncul di sini</p>
                                     </div>
                                 </div>
                             </div>
@@ -247,47 +585,56 @@
                 </div>
             </div>
 
-            <!-- TAB 4: JADWAL -->
-            <div class="tab-pane fade" id="pills-schedule">
+            <!-- ======================= TAB 4: SCHEDULE ======================= -->
+            <div class="tab-pane fade" id="schedule-content">
                 <div class="row g-4">
                     <div class="col-md-4">
-                        <div class="card">
-                            <div class="card-header text-primary"><i class="fas fa-plus-circle me-2"></i>Tambah Jadwal</div>
-                            <div class="card-body">
+                        <div class="card-custom">
+                            <div class="card-header-custom text-primary">
+                                <span><i class="fas fa-plus-circle me-2"></i>Buat Jadwal</span>
+                            </div>
+                            <div class="card-body-custom">
                                 <form action="/add_schedule" method="POST">
-                                    <div class="row g-2">
+                                    <div class="row g-2 mb-3">
                                         <div class="col-6">
-                                            <label class="form-label small fw-bold">Jam (0-23)</label>
-                                            <input type="number" name="hour" class="form-control" placeholder="09" required min="0" max="23">
+                                            <label class="form-label small fw-bold text-uppercase">Jam</label>
+                                            <input type="number" name="hour" class="form-control form-control-lg text-center fw-bold" placeholder="00" required min="0" max="23">
                                         </div>
                                         <div class="col-6">
-                                            <label class="form-label small fw-bold">Menit</label>
-                                            <input type="number" name="minute" class="form-control" value="0" min="0" max="59">
+                                            <label class="form-label small fw-bold text-uppercase">Menit</label>
+                                            <input type="number" name="minute" class="form-control form-control-lg text-center fw-bold" value="00" min="0" max="59">
                                         </div>
                                     </div>
-                                    <div class="form-text mb-3 small text-danger"><i class="fas fa-exclamation-triangle"></i> Waktu Server = WIB.</div>
-                                    <button type="submit" class="btn btn-primary w-100">Simpan Jadwal</button>
+                                    <div class="alert alert-info py-2 small mb-3">
+                                        <i class="fas fa-clock me-1"></i> Waktu Server: WIB (UTC+7)
+                                    </div>
+                                    <button type="submit" class="btn btn-primary-gradient w-100 btn-custom">Simpan Jadwal</button>
                                 </form>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-8">
-                        <div class="card">
-                            <div class="card-header"><i class="fas fa-clock me-2"></i>Jadwal Aktif</div>
-                            <div class="card-body">
+                        <div class="card-custom">
+                            <div class="card-header-custom">
+                                <span><i class="fas fa-calendar-check me-2 text-secondary"></i>Daftar Jadwal Aktif</span>
+                            </div>
+                            <div class="card-body-custom">
                                 <div class="row g-3">
                                     {% for s in schedules %}
                                     <div class="col-6 col-md-3">
-                                        <div class="position-relative border rounded p-3 text-center bg-light">
-                                            <h3 class="mb-0 fw-bold text-dark">{{ '%02d' % s.run_hour }}:{{ '%02d' % s.run_minute }}</h3>
-                                            <span class="badge bg-secondary">WIB</span>
-                                            <a href="/delete_schedule/{{ s.id }}" class="position-absolute top-0 end-0 m-1 text-danger p-1" onclick="return confirm('Hapus jadwal ini?')">
+                                        <div class="position-relative border bg-white rounded-3 p-3 text-center shadow-sm h-100 d-flex flex-column justify-content-center align-items-center">
+                                            <h2 class="mb-0 fw-bold text-dark font-monospace">{{ '%02d' % s.run_hour }}:{{ '%02d' % s.run_minute }}</h2>
+                                            <span class="badge bg-light text-secondary border mt-2">WIB</span>
+                                            <a href="/delete_schedule/{{ s.id }}" class="position-absolute top-0 end-0 m-2 text-danger opacity-50 hover-opacity-100 transition" onclick="return confirm('Hapus jadwal ini?')">
                                                 <i class="fas fa-times-circle"></i>
                                             </a>
                                         </div>
                                     </div>
                                     {% else %}
-                                    <div class="col-12 text-center text-muted py-4">Belum ada jadwal blasting.</div>
+                                    <div class="col-12 text-center py-5">
+                                        <i class="far fa-calendar-times fa-3x mb-3 text-muted opacity-25"></i>
+                                        <p class="text-muted">Belum ada jadwal otomatis yang diatur.</p>
+                                    </div>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -299,32 +646,162 @@
         </div> <!-- End Tab Content -->
     </div> <!-- End Container -->
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // --- GLOBAL VARIABLES ---
-        let scannedData = [];
+    <!-- STOP CONFIRMATION MODAL -->
+    <div class="modal fade" id="stopConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header bg-danger text-white border-0">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-exclamation-triangle me-2"></i>Konfirmasi Stop</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <p class="mb-0 fs-5">Apakah Anda yakin ingin menghentikan paksa proses Blast?</p>
+                    <p class="text-muted small mt-2">Proses akan berhenti total dan progress saat ini akan di-reset.</p>
+                </div>
+                <div class="modal-footer border-0 bg-light justify-content-center pb-4">
+                    <button type="button" class="btn btn-light px-4 rounded-pill" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" onclick="executeStop()" class="btn btn-danger px-4 rounded-pill fw-bold">Ya, Hentikan!</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        // --- SCANNER FUNCTION ---
-        function scanTelegram() {
-            const loader = document.getElementById('loader');
-            const resultArea = document.getElementById('scan-results-area');
+    <!-- BOOTSTRAP JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // --- CLOCK WIDGET ---
+        setInterval(() => {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit' });
+            document.getElementById('clock-wib').textContent = timeString + " WIB";
+        }, 1000);
+
+        // --- GLOBAL VARS ---
+        let scannedData = [];
+        let blastStatusInterval = null;
+
+        // --- TOAST NOTIFICATION ---
+        function showToast(message, type = 'success') {
+            const container = document.querySelector('.toast-container');
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            const color = type === 'success' ? 'success' : 'danger';
             
-            loader.style.display = 'flex'; // Show loader
+            const html = `
+                <div class="toast align-items-center text-white bg-${color} border-0 animate__animated animate__fadeInRight" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body fw-bold d-flex align-items-center">
+                            <i class="fas ${icon} me-2 fa-lg"></i> ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            const el = document.createElement('div');
+            el.innerHTML = html;
+            container.appendChild(el.firstElementChild);
+            
+            const toastEl = container.lastElementChild;
+            const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+            toast.show();
+            
+            toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+        }
+
+        // --- LOADER HELPER ---
+        function toggleLoader(show) {
+            document.getElementById('globalLoader').style.display = show ? 'flex' : 'none';
+        }
+
+        // --- BLAST CONTROL LOGIC (NEW) ---
+        function updateBlastUI(data) {
+            const badgeEl = document.getElementById('blastStatusBadge');
+            const statusMap = {
+                'IDLE': { class: 'badge-idle', icon: 'fa-stop-circle', text: 'IDLE / READY' },
+                'RUNNING': { class: 'badge-running', icon: 'fa-sync fa-spin', text: 'RUNNING' },
+                'PAUSED': { class: 'badge-paused', icon: 'fa-pause-circle', text: 'PAUSED' },
+                'STOPPED': { class: 'badge-stopped', icon: 'fa-ban', text: 'STOPPED' }
+            };
+            
+            const state = data.state;
+            const conf = statusMap[state] || statusMap['IDLE'];
+            
+            // Update Badge
+            badgeEl.innerHTML = `<span class="status-badge ${conf.class}"><i class="fas ${conf.icon} me-1"></i>${conf.text}</span>`;
+            
+            // Update Stats
+            const meta = data.meta;
+            document.getElementById('currentGroupTarget').textContent = state === 'IDLE' ? 'Menunggu antrian...' : (meta.current_group || '-');
+            document.getElementById('successCount').textContent = meta.success_count;
+            document.getElementById('failCount').textContent = meta.fail_count;
+            document.getElementById('totalTargets').textContent = meta.total_targets;
+            
+            // Update Progress Bar
+            let percent = 0;
+            if(meta.total_targets > 0) {
+                percent = Math.round((meta.current_index / meta.total_targets) * 100);
+            }
+            document.getElementById('blastProgressBar').style.width = percent + '%';
+            document.getElementById('progressPercentage').textContent = percent + '%';
+        }
+
+        function fetchBlastStatus() {
+            fetch('/api/blast/status')
+                .then(r => r.json())
+                .then(data => updateBlastUI(data))
+                .catch(e => console.error("Status polling error:", e));
+        }
+
+        function controlBlast(action) {
+            fetch('/api/blast/control', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: action})
+            })
+            .then(r => r.json())
+            .then(json => {
+                if(json.status === 'success') {
+                    showToast(json.message, 'success');
+                    fetchBlastStatus(); // Instant update
+                } else {
+                    showToast(json.message, 'error');
+                }
+            });
+        }
+
+        // Stop Confirmation
+        let stopModal;
+        function confirmStopBlast() {
+            stopModal = new bootstrap.Modal(document.getElementById('stopConfirmModal'));
+            stopModal.show();
+        }
+        function executeStop() {
+            controlBlast('stop');
+            stopModal.hide();
+        }
+
+        // Start Polling on Load
+        setInterval(fetchBlastStatus, 2000); // Poll every 2 seconds
+        fetchBlastStatus(); // Initial call
+
+        // --- SCANNER LOGIC ---
+        function scanTelegram() {
+            toggleLoader(true);
+            const resultArea = document.getElementById('scan-results-area');
             
             fetch('/scan_groups_api')
                 .then(response => response.json())
                 .then(json => {
-                    loader.style.display = 'none'; // Hide loader
-                    
+                    toggleLoader(false);
                     if(json.status === 'success') {
                         renderScanResults(json.data);
                     } else {
-                        resultArea.innerHTML = `<div class="alert alert-danger m-3"><i class="fas fa-exclamation-triangle me-2"></i>Gagal Scan: ${json.message}</div>`;
+                        resultArea.innerHTML = `<div class="text-danger text-center p-3"><i class="fas fa-exclamation-triangle"></i> Gagal Scan: ${json.message}</div>`;
                     }
                 })
                 .catch(err => {
-                    loader.style.display = 'none';
-                    resultArea.innerHTML = `<div class="alert alert-danger m-3"><i class="fas fa-wifi me-2"></i>Error Koneksi: ${err}</div>`;
+                    toggleLoader(false);
+                    resultArea.innerHTML = `<div class="text-danger text-center p-3">Error Koneksi: ${err}</div>`;
                 });
         }
 
@@ -333,122 +810,99 @@
             const container = document.getElementById('scan-results-area');
             
             if (data.length === 0) {
-                container.innerHTML = '<div class="text-center py-5 text-muted">Tidak ditemukan grup Telegram. Pastikan akun sudah join grup.</div>';
+                container.innerHTML = '<div class="text-center py-5 text-muted">Tidak ditemukan grup.</div>';
                 return;
             }
 
             let html = '<div class="list-group list-group-flush">';
-            
             data.forEach((group, index) => {
-                // Logic cek apakah forum punya topik atau kosong
                 const hasTopics = group.is_forum && group.topics && group.topics.length > 0;
                 
                 html += `
-                <div class="list-group-item px-2 py-3 border-bottom">
+                <div class="list-group-item px-2 py-3 border-bottom group-item" data-name="${group.name.toLowerCase()}">
                     <div class="d-flex align-items-center">
                         <div class="form-check me-2">
                             <input class="form-check-input" type="checkbox" style="transform: scale(1.2);" id="g-${index}" value="${index}" onchange="toggleTopics(${index})">
                         </div>
                         <div class="flex-grow-1">
-                            <label class="form-check-label fw-bold text-dark d-block" for="g-${index}" style="cursor: pointer;">
+                            <label class="form-check-label fw-bold text-dark d-block pointer" for="g-${index}">
                                 ${group.name}
                             </label>
                             <small class="text-muted d-flex align-items-center">
                                 <i class="fas fa-fingerprint me-1"></i> ${group.id}
-                                ${group.is_forum ? '<span class="badge badge-forum ms-2"><i class="fas fa-comments me-1"></i>Forum</span>' : ''}
+                                ${group.is_forum ? '<span class="badge bg-warning text-dark ms-2" style="font-size:0.6rem">FORUM</span>' : ''}
                             </small>
                         </div>
                     </div>
                     
-                    <!-- AREA INPUT MANUAL TOPIK (UNTUK SEMUA GRUP) -->
-                    <div class="mt-2 ms-4">
+                    <div class="mt-2 ms-4 bg-light p-2 rounded">
                          <div class="input-group input-group-sm">
-                            <span class="input-group-text bg-light text-muted">Manual Topik ID:</span>
-                            <input type="text" class="form-control" id="manual-topic-${index}" placeholder="Contoh: 12345, 67890 (Pisahkan koma)">
-                        </div>
-                        <div class="form-text text-muted small ms-1" style="font-size: 0.75rem;">
-                            Jika scan otomatis gagal, masukkan ID topik secara manual di sini.
+                            <span class="input-group-text border-0 bg-transparent text-muted">Manual ID:</span>
+                            <input type="text" class="form-control border-0 bg-white shadow-sm rounded" id="manual-topic-${index}" placeholder="Contoh: 123, 456">
                         </div>
                     </div>
 
-                    <!-- AREA TOPIK FORUM (OTOMATIS) -->
                     ${group.is_forum ? `
-                        <div class="topic-container ms-4 mt-2" id="topics-${index}">
+                        <div class="ms-4 mt-2" id="topics-${index}">
                             ${hasTopics ? `
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <small class="fw-bold text-secondary">Pilih Topik Target:</small>
-                                    <small class="text-primary" style="cursor:pointer;" onclick="toggleTopics(${index}, true)">Pilih Semua</small>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="fw-bold text-secondary" style="font-size:0.7rem">TOPICS DETECTED:</small>
+                                    <small class="text-primary pointer" style="font-size:0.7rem" onclick="toggleTopics(${index}, true)">Select All</small>
                                 </div>
                                 <div class="row g-2">
                                     ${group.topics.map(t => `
                                         <div class="col-12">
-                                            <div class="form-check bg-white border rounded px-3 py-2">
+                                            <div class="form-check bg-white border rounded px-3 py-1 shadow-sm">
                                                 <input class="form-check-input topic-check-${index}" type="checkbox" value="${t.id}" id="t-${t.id}">
-                                                <label class="form-check-label w-100 small" for="t-${t.id}" style="cursor: pointer;">
+                                                <label class="form-check-label w-100 small pointer" for="t-${t.id}">
                                                     ${t.title} <span class="text-muted ms-1">(${t.id})</span>
                                                 </label>
                                             </div>
                                         </div>
                                     `).join('')}
                                 </div>
-                            ` : `
-                                <div class="alert alert-warning py-2 small mb-0">
-                                    <i class="fas fa-exclamation-circle me-1"></i>
-                                    <strong>Tidak ada topik otomatis ditemukan.</strong><br>
-                                    Silakan gunakan kolom "Manual Topik ID" di atas.
-                                </div>
-                            `}
+                            ` : `<small class="text-danger fst-italic ms-1">No automated topics found. Use Manual ID.</small>`}
                         </div>
                     ` : ''}
                 </div>`;
             });
-            
             html += '</div>';
             container.innerHTML = html;
         }
 
+        function filterScanResults() {
+            const term = document.getElementById('scanFilter').value.toLowerCase();
+            document.querySelectorAll('.group-item').forEach(el => {
+                const name = el.getAttribute('data-name');
+                el.style.display = name.includes(term) ? 'block' : 'none';
+            });
+        }
+
         function toggleTopics(index, forceAll = false) {
             const groupCheck = document.getElementById(`g-${index}`);
-            // Kalau diklik "Pilih Semua", centang grup masternya juga
             if (forceAll) groupCheck.checked = true;
-            
-            const topicChecks = document.querySelectorAll(`.topic-check-${index}`);
-            topicChecks.forEach(cb => {
-                // Centang topik mengikuti status centang grup
+            document.querySelectorAll(`.topic-check-${index}`).forEach(cb => {
                 cb.checked = groupCheck.checked;
             });
         }
 
-        // --- SAVE FUNCTION (UPDATED MANUAL INPUT) ---
         function saveSelection() {
             const selected = [];
-            
             scannedData.forEach((group, index) => {
                 const groupCheck = document.getElementById(`g-${index}`);
                 const manualInput = document.getElementById(`manual-topic-${index}`);
-                
-                // Ambil Topik dari Checkbox
                 const topicChecks = document.querySelectorAll(`.topic-check-${index}:checked`);
+                
                 let selectedTopicIds = [];
                 topicChecks.forEach(cb => selectedTopicIds.push(cb.value));
 
-                // Ambil Topik dari Manual Input
                 if (manualInput && manualInput.value.trim() !== "") {
-                    const manuals = manualInput.value.split(',');
-                    manuals.forEach(m => {
-                        const cleanId = m.trim();
-                        if (cleanId && !isNaN(cleanId)) {
-                            selectedTopicIds.push(cleanId);
-                        }
+                    manualInput.value.split(',').forEach(m => {
+                        if(m.trim()) selectedTopicIds.push(m.trim());
                     });
                 }
 
-                // LOGIKA SIMPAN:
-                // Simpan jika Grup dicentang ATAU ada topik (manual/checkbox) yang terisi
-                const isGroupSelected = groupCheck.checked;
-                const hasTopicsSelected = selectedTopicIds.length > 0;
-
-                if (isGroupSelected || hasTopicsSelected) {
+                if (groupCheck && (groupCheck.checked || selectedTopicIds.length > 0)) {
                     selected.push({
                         group_id: group.id,
                         group_name: group.name,
@@ -457,15 +911,9 @@
                 }
             });
 
-            if (selected.length === 0) {
-                alert("⚠️ Belum ada target yang dipilih!\nSilakan centang grup atau isi Topik ID manual.");
-                return;
-            }
+            if (selected.length === 0) return showToast("Pilih minimal satu grup!", 'error');
 
-            if(!confirm(`Simpan ${selected.length} grup/target ke database?`)) return;
-
-            document.getElementById('loader').style.display = 'flex';
-            
+            toggleLoader(true);
             fetch('/save_bulk_targets', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -473,17 +921,13 @@
             })
             .then(res => res.json())
             .then(json => {
-                document.getElementById('loader').style.display = 'none';
+                toggleLoader(false);
                 if(json.status === 'success') {
-                    alert("✅ " + json.message);
-                    location.reload();
+                    showToast(json.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
                 } else {
-                    alert("❌ Gagal: " + json.message);
+                    showToast(json.message, 'error');
                 }
-            })
-            .catch(err => {
-                document.getElementById('loader').style.display = 'none';
-                alert("❌ Error Server: " + err);
             });
         }
 
@@ -492,40 +936,40 @@
             const form = document.getElementById('broadcastForm');
             const formData = new FormData(form);
             
-            if(!formData.get('message')) return alert("⚠️ Pesan tidak boleh kosong!");
-            if(!confirm("🚀 Yakin mau memulai Broadcast?\nIni akan mengirim pesan ke SEMUA user yang ada di database.")) return;
+            if(!formData.get('message')) return showToast("Pesan tidak boleh kosong!", 'error');
             
-            document.getElementById('loader').style.display = 'flex';
-            fetch('/start_broadcast', {
-                method: 'POST',
-                body: formData
-            }).then(r => r.json()).then(json => {
-                document.getElementById('loader').style.display = 'none';
-                alert(json.message);
-                if(json.status === 'success') location.reload();
-            });
+            if(confirm("🚀 Mulai Broadcast ke SEMUA user di database?")) {
+                toggleLoader(true);
+                fetch('/start_broadcast', { method: 'POST', body: formData })
+                .then(r => r.json()).then(json => {
+                    toggleLoader(false);
+                    if(json.status === 'success') {
+                        showToast(json.message, 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast(json.message, 'error');
+                    }
+                });
+            }
         }
 
-        // --- IMPORT CRM FUNCTION (BARU) ---
+        // --- IMPORT CRM ---
         function importCRM() {
-            if(!confirm("📥 Mulai Import Riwayat Chat?\nBot akan men-scan ribuan chat lama Anda untuk disimpan ke database. Proses ini berjalan di background.")) return;
+            if(confirm("📥 Import chat history? Proses ini akan berjalan di background.")) {
+                toggleLoader(true);
+                fetch('/import_crm_api', { method: 'POST' })
+                .then(r => r.json()).then(json => {
+                    toggleLoader(false);
+                    showToast(json.message, json.status === 'success' ? 'success' : 'error');
+                });
+            }
+        }
 
-            const btn = event.target;
-            btn.disabled = true;
-            btn.innerText = "Sedang Memproses...";
-            
-            fetch('/import_crm_api', { method: 'POST' })
-            .then(r => r.json())
-            .then(json => {
-                alert(json.message);
-                btn.disabled = false;
-                btn.innerText = "Mulai Import Sekarang";
-                if(json.status === 'success') location.reload();
-            })
-            .catch(err => {
-                alert("Error: " + err);
-                btn.disabled = false;
-            });
+        // --- DELETE TARGET ---
+        function confirmDeleteTarget(id, name) {
+            if(confirm(`Hapus target: ${name}?`)) {
+                window.location.href = `/delete_target/${id}`;
+            }
         }
     </script>
 </body>
