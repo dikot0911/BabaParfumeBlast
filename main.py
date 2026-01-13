@@ -1,61 +1,72 @@
 import os
 import asyncio
 import random
-from dotenv import load_dotenv
 from telethon import TelegramClient
+from telethon.sessions import StringSession
+from dotenv import load_dotenv
 
-# Load variabel dari .env
 load_dotenv()
 
-api_id = os.getenv('API_ID')
-api_hash = os.getenv('API_HASH')
-session_name = os.getenv('SESSION_NAME')
-message_text = os.getenv('MESSAGE_TEXT').replace('\\n', '\n')
-interval = int(os.getenv('INTERVAL', 14400))
+# --- CONFIG ---
+API_ID = int(os.getenv('API_ID'))
+API_HASH = os.getenv('API_HASH')
+STRING_SESSION = os.getenv('STRING_SESSION')
+# ID Grup Sumber (Baba Parfume) - Pastikan akun lu ada di sana
+SOURCE_CHAT_ID = int(os.getenv('SOURCE_CHAT_ID'))
+# ID Pesan Template yang mau di-forward
+SOURCE_MSG_ID = int(os.getenv('SOURCE_MSG_ID'))
+# Jeda antar blast (default 4 jam)
+INTERVAL = int(os.getenv('INTERVAL', 14400))
 
-# --- MAPPING GRUP & TOPIK ---
-# Format: {ID_GRUP: [ID_TOPIK_1, ID_TOPIK_2]}
+# --- MAPPING TARGET (Grup ID -> List Topik ID) ---
+# Silakan sesuaikan ID-ID ini dengan target lu
 TARGET_MAP = {
-    -1001111111111: [12, 45],  # Contoh: Grup A (Topik 12 & 45)
-    -1002222222222: [99],      # Contoh: Grup B (Topik 99)
-    -1003333333333: [7, 10, 5] # Contoh: Grup C (Topik 7, 10, 5)
-    # Tambahkan sampai 16 grup lu di sini
+    -1001111111111: [12, 45],  # Contoh Grup 1: Topik 12 & 45
+    -1002222222222: [99],      # Contoh Grup 2: Topik 99
+    # ... Tambahkan sampai 16 grup di sini
 }
 
-client = TelegramClient(session_name, api_id, api_hash)
+client = TelegramClient(StringSession(STRING_SESSION), API_ID, API_HASH)
 
-async def auto_share():
-    print("Userbot started...")
+async def auto_forward():
+    print("🚀 Userbot Baba Parfume sedang berjalan...")
+    
     while True:
-        print("\n--- Memulai siklus pengiriman ---")
+        print("\n--- Memulai Siklus Blast ---")
+        try:
+            # Ambil pesan dari grup sumber
+            # entity bisa pake ID grup langsung
+            msg = await client.get_messages(SOURCE_CHAT_ID, ids=SOURCE_MSG_ID)
+            
+            if msg:
+                for group_id, topic_ids in TARGET_MAP.items():
+                    for t_id in topic_ids:
+                        try:
+                            # Forward pesan ke grup dan topik tertentu
+                            await client.forward_messages(
+                                entity=group_id,
+                                messages=msg,
+                                reply_to=t_id # ID Topik di Telegram Forum
+                            )
+                            print(f"✅ Berhasil forward ke Grup {group_id} | Topik {t_id}")
+                            
+                            # Jeda random 30-60 detik biar gak dianggap robot brutal oleh Telegram
+                            await asyncio.sleep(random.randint(30, 60))
+                        except Exception as e:
+                            print(f"❌ Gagal di {group_id} Topik {t_id}: {e}")
+            else:
+                print("⚠️ Pesan sumber tidak ditemukan. Cek SOURCE_MSG_ID!")
         
-        # Ambil semua grup dari mapping
-        for group_id, topic_ids in TARGET_MAP.items():
-            for t_id in topic_ids:
-                try:
-                    # Kirim pesan ke grup & topik spesifik
-                    await client.send_message(
-                        group_id, 
-                        message_text, 
-                        reply_to=t_id
-                    )
-                    print(f"✅ Terkirim: Grup {group_id} | Topik {t_id}")
-                    
-                    # Jeda random 30-60 detik biar gak kena ban
-                    delay = random.randint(30, 60)
-                    await asyncio.sleep(delay)
-                    
-                except Exception as e:
-                    print(f"❌ Gagal di {group_id} Topik {t_id}: {e}")
+        except Exception as e:
+            print(f"⚠️ Error Utama: {e}")
 
-        print(f"\n--- Siklus selesai. Tidur selama {interval/3600} jam... ---")
-        await asyncio.sleep(interval)
+        print(f"--- Siklus Selesai. Tidur {INTERVAL/3600} Jam... ---")
+        await asyncio.sleep(INTERVAL)
 
 async def main():
-    # Pastikan login sukses
     await client.start()
-    print("Client terhubung!")
-    await auto_share()
+    print("✅ Akun berhasil terhubung!")
+    await auto_forward()
 
 if __name__ == '__main__':
     with client:
