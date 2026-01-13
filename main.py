@@ -10,8 +10,9 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 
 # --- TELETHON & SUPABASE ---
-from telethon import TelegramClient, events, errors
+from telethon import TelegramClient, events, errors, utils
 from telethon.sessions import StringSession
+from telethon.tl.types import PeerChannel
 from supabase import create_client, Client
 
 # --- KONFIGURASI LOGGING ---
@@ -53,7 +54,7 @@ AUTO_REPLY_MSG = (
     "Lagi cari aroma apa nih kak? Untuk cewe apa cowo? "
     "Kalo belum punya aroma personal, biar mimin bantu rekomendasiin ya ^^\n\n"
     "👇 *Katalog Lengkap & Testimoni:*\n"
-    "[KLIK DISINI YA KAK](https://t.me/GantiUsernameChannelMu)"
+    "[KLIK DISINI YA KAK](https://babaparfume.netlify.app)"
 )
 AUTO_REPLY_DELAY_HOURS = 6    # Jeda waktu auto-reply ke user yang sama
 DB_UPDATE_INTERVAL_HOURS = 1  # Jeda update data user ke DB
@@ -117,20 +118,42 @@ async def save_user_to_db(uid, uname, fname):
 
 async def get_entity_safe(entity_id):
     """
-    Fungsi SAKTI untuk mencari Entity (User/Grup) dengan aman.
-    Mencegah error 'PeerUser/PeerChannel not found'.
+    Fungsi SAKTI (ULTIMATE VERSION) untuk mencari Entity.
+    Menangani perbedaan ID antara Scanner (123...) dan RoseBot (-100123...).
     """
+    entity_id = int(entity_id) # Pastikan integer
+    
+    # 1. Coba ID MENTAH (Sesuai database)
     try:
-        # 1. Cek Cache Lokal (Cepat)
         return await client.get_input_entity(entity_id)
     except:
-        try:
-            # 2. Force Fetch dari Server Telegram (Lambat tapi Akurat)
-            # logger.info(f"🔍 Fetching entity {entity_id} from network...")
-            return await client.get_entity(entity_id)
-        except Exception as e:
-            logger.error(f"❌ Entity {entity_id} benar-benar tidak ditemukan: {e}")
-            return None
+        pass # Lanjut ke strategi berikutnya
+        
+    # 2. Coba Tambahkan Prefix -100 (Format Supergroup/Channel)
+    # Ini solusi buat ID yang di scan dapetnya positif (155...) tapi aslinya channel (-100155...)
+    try:
+        if entity_id > 0:
+            new_id = int(f"-100{entity_id}")
+            # logger.info(f"🔄 Mencoba convert ID: {entity_id} -> {new_id}")
+            return await client.get_input_entity(new_id)
+    except:
+        pass
+
+    # 3. Coba Paksa Fetch dari Network (Lambat tapi Akurat)
+    try:
+        return await client.get_entity(entity_id)
+    except:
+        pass
+        
+    # 4. Coba Fetch Network dengan Prefix -100
+    try:
+        if entity_id > 0:
+            new_id = int(f"-100{entity_id}")
+            return await client.get_entity(new_id)
+    except Exception as e:
+        # Menyerah
+        logger.error(f"❌ Entity {entity_id} (dan variasinya) GAGAL ditemukan: {e}")
+        return None
 
 # ==========================================
 # BAGIAN 2: FLASK ROUTES (WEB DASHBOARD)
@@ -177,8 +200,12 @@ async def fetch_telegram_dialogs():
             entity = dialog.entity
             is_forum = getattr(entity, 'forum', False)
             
+            # AMBIL REAL ID (Telethon Friendly)
+            # utils.get_peer_id memastikan kita dapet ID yang benar
+            real_id = utils.get_peer_id(entity)
+            
             g_data = {
-                'id': entity.id, 
+                'id': real_id, 
                 'name': entity.title, 
                 'is_forum': is_forum, 
                 'topics': []
@@ -462,12 +489,12 @@ async def auto_blast_loop():
                                     t_ids = [int(x.strip()) for x in raw_topics.split(',') if x.strip().isdigit()] if raw_topics else [None]
                                     
                                     # --- SAFETY 3: PREPARE TARGET ENTITY ---
-                                    # Pastikan bot mengenali Grup Tujuan
+                                    # Pastikan bot mengenali Grup Tujuan (HANDLE PREFIX ISSUE)
                                     target_group_id = target['group_id']
                                     target_entity = await get_entity_safe(target_group_id)
 
                                     if not target_entity:
-                                        err_msg = f"Bot tidak mengenali Grup ID {target_group_id}. Coba pancing dengan chat manual."
+                                        err_msg = f"Bot tidak mengenali Grup ID {target_group_id} (dan variasinya)."
                                         log_to_db(target['group_name'], target_group_id, 0, "FAILED", err_msg)
                                         continue
                                     
