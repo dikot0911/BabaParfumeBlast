@@ -1,4 +1,5 @@
 .env
 *.session
 *.session-journal
-__pycache__/
+pycache/
+local_session_gen.py
