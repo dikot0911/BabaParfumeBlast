@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baba Parfume Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .navbar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .card-header { background: #fff; border-bottom: 1px solid #eee; border-radius: 12px 12px 0 0 !important; font-weight: bold; color: #333; }
+        .status-success { color: #198754; font-weight: bold; background: #d1e7dd; padding: 2px 8px; border-radius: 4px; }
+        .status-failed { color: #dc3545; font-weight: bold; background: #f8d7da; padding: 2px 8px; border-radius: 4px; }
+        .topic-badge { font-size: 0.8em; margin-right: 4px; margin-bottom: 4px; display: inline-block; }
+        /* Loader */
+        .spinner-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; }
+    </style>
+</head>
+<body>
+    <!-- LOADER -->
+    <div id="loader" class="spinner-overlay">
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+        <h5 class="mt-3 text-primary">Sedang Scan Grup Telegram...</h5>
+        <p class="text-muted">Mohon tunggu, jangan refresh halaman.</p>
+    </div>
+
+    <nav class="navbar navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-robot me-2"></i>Baba Parfume Auto-Blast</a>
+            <span class="text-white-50">Admin Panel</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- TABS NAVIGASI -->
+        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" id="pills-log-tab" data-bs-toggle="pill" data-bs-target="#pills-log">📊 Live Logs</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="pills-target-tab" data-bs-toggle="pill" data-bs-target="#pills-target">🎯 Target Grup (Scan)</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="pills-schedule-tab" data-bs-toggle="pill" data-bs-target="#pills-schedule">⏰ Jadwal Blast</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            
+            <!-- TAB 1: LOGS -->
+            <div class="tab-pane fade show active" id="pills-log">
+                <div class="card">
+                    <div class="card-header">Riwayat Aktivitas Terakhir</div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Waktu (UTC)</th>
+                                        <th>Grup</th>
+                                        <th>Topik</th>
+                                        <th>Status</th>
+                                        <th>Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                    <tr>
+                                        <td class="small text-muted">{{ log.created_at[:19].replace('T', ' ') }}</td>
+                                        <td>{{ log.group_name }}</td>
+                                        <td>{{ log.topic_id or '-' }}</td>
+                                        <td><span class="{{ 'status-success' if log.status == 'SUCCESS' else 'status-failed' }}">{{ log.status }}</span></td>
+                                        <td class="small text-danger">{{ log.error_message or '' }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr><td colspan="5" class="text-center py-3">Belum ada log aktivitas.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: TARGET GRUP (SCANNER) -->
+            <div class="tab-pane fade" id="pills-target">
+                <div class="card border-primary mb-3">
+                    <div class="card-body bg-light d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title text-primary"><i class="fas fa-satellite-dish me-2"></i>Scanner Grup Telegram</h5>
+                            <p class="card-text small text-muted">Klik tombol Scan untuk mengambil daftar grup dan topik langsung dari akun lu.</p>
+                        </div>
+                        <button onclick="scanTelegram()" class="btn btn-primary btn-lg"><i class="fas fa-sync-alt me-2"></i>Scan Grup Sekarang</button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- KOLOM KIRI: DAFTAR GRUP TERDAFTAR (DATABASE) -->
+                    <div class="col-md-5">
+                        <div class="card h-100">
+                            <div class="card-header">Target Aktif (Database)</div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush">
+                                    {% for target in targets %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ target.group_name }}</strong>
+                                            <div class="small text-muted">ID: {{ target.group_id }}</div>
+                                            {% if target.topic_ids %}
+                                            <div class="mt-1">
+                                                {% for t in target.topic_ids.split(',') %}
+                                                <span class="badge bg-info text-dark topic-badge">Topik: {{ t }}</span>
+                                                {% endfor %}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <a href="/delete_target/{{ target.id }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Hapus?')"><i class="fas fa-trash"></i></a>
+                                    </li>
+                                    {% else %}
+                                    <li class="list-group-item text-center text-muted">Belum ada target tersimpan. Scan dulu!</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KOLOM KANAN: HASIL SCAN (CHECKBOX) -->
+                    <div class="col-md-7">
+                        <div class="card h-100 border-success">
+                            <div class="card-header bg-success text-white d-flex justify-content-between">
+                                <span>Hasil Scan (Pilih Target)</span>
+                                <button onclick="saveSelection()" class="btn btn-sm btn-light text-success fw-bold">Simpan Pilihan</button>
+                            </div>
+                            <div class="card-body" id="scan-results-area">
+                                <p class="text-center text-muted py-5">Klik tombol "Scan Grup Sekarang" di atas untuk memunculkan data.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: JADWAL -->
+            <div class="tab-pane fade" id="pills-schedule">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">Tambah Jadwal</div>
+                            <div class="card-body">
+                                <form action="/add_schedule" method="POST">
+                                    <div class="row">
+                                        <div class="col-6 mb-3"><label>Jam (0-23)</label><input type="number" name="hour" class="form-control" required></div>
+                                        <div class="col-6 mb-3"><label>Menit (0-59)</label><input type="number" name="minute" class="form-control" value="0"></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary w-100">Tambah</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">Jadwal Aktif</div>
+                            <div class="card-body">
+                                <div class="row">
+                                    {% for s in schedules %}
+                                    <div class="col-3 mb-3">
+                                        <div class="border rounded p-2 text-center position-relative">
+                                            <h4 class="mb-0">{{ '%02d' % s.run_hour }}:{{ '%02d' % s.run_minute }}</h4>
+                                            <small class="text-muted">UTC</small>
+                                            <a href="/delete_schedule/{{ s.id }}" class="position-absolute top-0 end-0 text-danger p-1"><i class="fas fa-times"></i></a>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let scannedData = [];
+
+        function scanTelegram() {
+            document.getElementById('loader').style.display = 'flex';
+            fetch('/scan_groups_api')
+                .then(response => response.json())
+                .then(json => {
+                    document.getElementById('loader').style.display = 'none';
+                    if(json.status === 'success') {
+                        renderScanResults(json.data);
+                    } else {
+                        alert("Gagal scan: " + json.message);
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('loader').style.display = 'none';
+                    alert("Error koneksi: " + err);
+                });
+        }
+
+        function renderScanResults(data) {
+            scannedData = data;
+            const container = document.getElementById('scan-results-area');
+            if (data.length === 0) {
+                container.innerHTML = '<p class="text-center">Tidak ditemukan grup.</p>';
+                return;
+            }
+
+            let html = '<div class="list-group">';
+            data.forEach((group, index) => {
+                html += `
+                <div class="list-group-item">
+                    <div class="d-flex align-items-center">
+                        <input class="form-check-input me-3 group-checkbox" type="checkbox" id="g-${index}" value="${index}" onchange="toggleTopics(${index})">
+                        <div class="flex-grow-1">
+                            <label class="form-check-label fw-bold d-block" for="g-${index}">${group.name}</label>
+                            <small class="text-muted">ID: ${group.id}</small>
+                        </div>
+                        ${group.is_forum ? '<span class="badge bg-warning text-dark">Forum</span>' : ''}
+                    </div>
+                    
+                    ${group.is_forum && group.topics.length > 0 ? `
+                    <div class="ms-4 mt-2 ps-3 border-start topic-container" id="topics-${index}">
+                        <small class="text-muted d-block mb-1">Pilih Topik:</small>
+                        ${group.topics.map(t => `
+                            <div class="form-check">
+                                <input class="form-check-input topic-check-${index}" type="checkbox" value="${t.id}" id="t-${t.id}">
+                                <label class="form-check-label" for="t-${t.id}">${t.title} (${t.id})</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+                </div>`;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function toggleTopics(index) {
+            const groupCheck = document.getElementById(`g-${index}`);
+            const topicChecks = document.querySelectorAll(`.topic-check-${index}`);
+            topicChecks.forEach(cb => cb.checked = groupCheck.checked);
+        }
+
+        function saveSelection() {
+            const selected = [];
+            
+            scannedData.forEach((group, index) => {
+                const groupCheck = document.getElementById(`g-${index}`);
+                if (!groupCheck.checked) {
+                    // Cek apakah ada topik yang dicentang manual meskipun grupnya gak dicentang master-nya
+                    const topicChecks = document.querySelectorAll(`.topic-check-${index}:checked`);
+                    if (topicChecks.length === 0) return;
+                }
+
+                // Ambil topik yang dicentang
+                let selectedTopicIds = [];
+                if (group.is_forum) {
+                    const topicChecks = document.querySelectorAll(`.topic-check-${index}:checked`);
+                    topicChecks.forEach(cb => selectedTopicIds.push(cb.value));
+                    
+                    // Kalau forum tapi gak ada topik yang dipilih, skip grup ini
+                    if (selectedTopicIds.length === 0) return;
+                }
+
+                selected.push({
+                    group_id: group.id,
+                    group_name: group.name,
+                    topic_ids: selectedTopicIds
+                });
+            });
+
+            if (selected.length === 0) {
+                alert("Pilih minimal satu grup atau topik!");
+                return;
+            }
+
+            document.getElementById('loader').style.display = 'flex';
+            fetch('/save_bulk_targets', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({targets: selected})
+            })
+            .then(res => res.json())
+            .then(json => {
+                document.getElementById('loader').style.display = 'none';
+                if(json.status === 'success') {
+                    alert("Berhasil! " + json.message);
+                    location.reload();
+                } else {
+                    alert("Gagal: " + json.message);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
