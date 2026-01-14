@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baba Parfume | Ultimate Admin Panel</title>
+    <title>Baba Parfume | Ultimate Admin Panel v2</title>
     
     <!-- FONTS & ICONS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -130,17 +130,11 @@
             box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
             transform: translateY(-1px);
         }
-        .btn-success-gradient {
-            background: var(--success-gradient);
-            color: white;
-        }
-        .btn-danger-gradient {
-            background: var(--danger-gradient);
-            color: white;
-        }
+        .btn-success-gradient { background: var(--success-gradient); color: white; }
+        .btn-danger-gradient { background: var(--danger-gradient); color: white; }
         .btn-action-icon {
-            width: 40px;
-            height: 40px;
+            width: 32px;
+            height: 32px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -174,6 +168,39 @@
         .badge-running { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; animation: pulse-green 2s infinite; }
         .badge-paused { background-color: #fef9c3; color: #a16207; border: 1px solid #fde047; }
         .badge-stopped { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+        /* --- TABLE ENHANCEMENTS --- */
+        .table-custom th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            background-color: #f9fafb;
+            color: #6b7280;
+            border-bottom: 2px solid #e5e7eb;
+            cursor: pointer; /* For sort */
+        }
+        .table-custom th:hover { background-color: #f3f4f6; }
+        .table-custom td {
+            vertical-align: middle;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        .table-hover tbody tr:hover {
+            background-color: #f9fafb;
+        }
+        .pagination-custom .page-link {
+            border: none;
+            color: #6b7280;
+            margin: 0 2px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .pagination-custom .page-link.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+        }
 
         /* --- LOADER & TOAST --- */
         .loader-overlay {
@@ -250,7 +277,7 @@
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="logs-tab" data-bs-toggle="pill" data-bs-target="#logs-content" type="button">
-                    <i class="fas fa-list-ul me-2"></i>Live Logs
+                    <i class="fas fa-list-ul me-2"></i>Live Logs (Lengkap)
                 </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -314,7 +341,7 @@
                                         </h2>
                                         <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                             <div class="accordion-body px-0 text-muted small">
-                                                <strong>Blast:</strong> Mengirim pesan ke Grup/Forum yang ditargetkan.<br>
+                                                <strong>Blast:</strong> Mengirim pesan ke Grup/Forum yang ditargetkan.<br><br>
                                                 <strong>Broadcast:</strong> Mengirim pesan personal (PM) ke user di database CRM.
                                             </div>
                                         </div>
@@ -438,69 +465,116 @@
                 </div>
             </div>
 
-            <!-- ======================= TAB 2: LIVE LOGS ======================= -->
+            <!-- ======================= TAB 2: LIVE LOGS (MAXIMIZED UPGRADE) ======================= -->
             <div class="tab-pane fade" id="logs-content">
+                
+                <!-- Log Stats Summary (NEW) -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="bg-white p-3 rounded-xl shadow-sm border-start border-4 border-primary d-flex align-items-center">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="fas fa-server text-primary"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0 fw-bold" id="log-total">0</h3>
+                                <small class="text-muted">Total Aktivitas</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="bg-white p-3 rounded-xl shadow-sm border-start border-4 border-success d-flex align-items-center">
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="fas fa-check-double text-success"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0 fw-bold" id="log-success">0</h3>
+                                <small class="text-muted">Berhasil Terkirim</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="bg-white p-3 rounded-xl shadow-sm border-start border-4 border-danger d-flex align-items-center">
+                            <div class="bg-danger bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="fas fa-exclamation-triangle text-danger"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-0 fw-bold" id="log-failed">0</h3>
+                                <small class="text-muted">Gagal / Error</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card-custom h-100">
-                    <div class="card-header-custom">
+                    <div class="card-header-custom d-flex flex-column flex-md-row align-items-md-center gap-3">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-history me-2 text-primary"></i>
-                            <span>Riwayat Aktivitas</span>
+                            <span>Live Logs System</span>
                         </div>
-                        <button onclick="location.reload()" class="btn btn-sm btn-light shadow-sm border rounded-pill px-3">
-                            <i class="fas fa-sync-alt me-1"></i> Refresh
-                        </button>
+                        
+                        <!-- Advanced Toolbar (NEW) -->
+                        <div class="d-flex gap-2 ms-md-auto w-100 w-md-auto">
+                            <!-- Search -->
+                            <div class="input-group input-group-sm w-auto">
+                                <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                                <input type="text" id="logSearchInput" class="form-control border-start-0" placeholder="Cari Log..." onkeyup="renderLogTable()">
+                            </div>
+                            
+                            <!-- Status Filter -->
+                            <select id="logStatusFilter" class="form-select form-select-sm w-auto" onchange="renderLogTable()">
+                                <option value="ALL">Semua Status</option>
+                                <option value="SUCCESS">Hanya Sukses</option>
+                                <option value="FAILED">Hanya Gagal</option>
+                                <option value="WAIT">Menunggu (Flood)</option>
+                            </select>
+
+                            <!-- Refresh -->
+                            <button onclick="location.reload()" class="btn btn-sm btn-light border" title="Refresh Data">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light text-secondary small text-uppercase">
-                                <tr>
-                                    <th class="ps-4 py-3">Waktu</th>
-                                    <th class="py-3">Target Group</th>
-                                    <th class="py-3">Topic ID</th>
-                                    <th class="py-3">Status</th>
-                                    <th class="py-3">Detail</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for log in logs %}
-                                <tr class="border-bottom-0">
-                                    <td class="ps-4">
-                                        <div class="fw-bold text-dark">{{ log.created_at[11:19] }}</div>
-                                        <div class="small text-muted" style="font-size: 0.7rem;">{{ log.created_at[:10] }}</div>
-                                    </td>
-                                    <td class="fw-bold text-primary">{{ log.group_name }}</td>
-                                    <td>
-                                        {% if log.topic_id %}
-                                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">{{ log.topic_id }}</span>
-                                        {% else %}
-                                            <span class="text-muted small">-</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if log.status == 'SUCCESS' %}
-                                            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2"><i class="fas fa-check me-1"></i>SUKSES</span>
-                                        {% elif 'RETRY' in log.status %}
-                                            <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2"><i class="fas fa-redo me-1"></i>RETRY</span>
-                                        {% elif 'FLOOD' in log.status %}
-                                            <span class="badge bg-info bg-opacity-10 text-info rounded-pill px-3 py-2"><i class="fas fa-clock me-1"></i>WAIT</span>
-                                        {% else %}
-                                            <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-2"><i class="fas fa-times me-1"></i>GAGAL</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <small class="text-muted text-truncate d-inline-block" style="max-width: 150px;">{{ log.error_message or 'Terkirim dengan aman.' }}</small>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center py-5">
-                                        <img src="https://cdn-icons-png.flaticon.com/512/4076/4076432.png" width="60" class="mb-3 opacity-25">
-                                        <p class="text-muted">Belum ada log aktivitas.</p>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+
+                    <!-- Enhanced Table -->
+                    <div class="card-body-custom p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0 table-custom" id="logTableFull">
+                                <thead class="bg-light text-secondary small text-uppercase sticky-top">
+                                    <tr>
+                                        <th class="ps-4 py-3" onclick="sortLogTable('time')">Waktu <i class="fas fa-sort ms-1 opacity-50"></i></th>
+                                        <th class="py-3" onclick="sortLogTable('group')">Target Group <i class="fas fa-sort ms-1 opacity-50"></i></th>
+                                        <th class="py-3">Topic ID</th>
+                                        <th class="py-3">Status</th>
+                                        <th class="py-3 text-end pe-4">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logTableBody">
+                                    <!-- Data injected via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Pagination Footer (NEW) -->
+                    <div class="card-footer bg-white border-top p-3">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <small class="text-muted">Baris per halaman:</small>
+                                <select id="rowsPerPage" class="form-select form-select-sm w-auto" onchange="changeRowsPerPage()">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <small class="text-muted ms-2" id="showingInfo">Menampilkan 0 - 0 dari 0 data</small>
+                            </div>
+                            
+                            <nav aria-label="Log navigation">
+                                <ul class="pagination pagination-sm pagination-custom mb-0" id="paginationControls">
+                                    <!-- Pagination buttons will be generated here -->
+                                </ul>
+                            </nav>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -666,6 +740,32 @@
         </div>
     </div>
 
+    <!-- LOG DETAIL MODAL (NEW) -->
+    <div class="modal fade" id="logDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Detail Log</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="fw-bold small text-muted">Status</label>
+                        <div id="modalLogStatus"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold small text-muted">Target</label>
+                        <div class="p-2 bg-light rounded" id="modalLogTarget"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold small text-muted">Pesan Error / Info Lengkap</label>
+                        <pre class="bg-dark text-light p-3 rounded" style="white-space: pre-wrap;" id="modalLogMessage"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- BOOTSTRAP JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -680,6 +780,14 @@
         // --- GLOBAL VARS ---
         let scannedData = [];
         let blastStatusInterval = null;
+
+        // --- LOG SYSTEM VARIABLES (NEW) ---
+        // Inject data from Flask to JS safely
+        const rawLogs = {{ logs | tojson | safe }}; 
+        let currentLogs = rawLogs; // Untuk filter
+        let currentPage = 1;
+        let rowsPerPage = 10;
+        let sortDirection = 'desc';
 
         // --- TOAST NOTIFICATION ---
         function showToast(message, type = 'success') {
@@ -713,7 +821,7 @@
             document.getElementById('globalLoader').style.display = show ? 'flex' : 'none';
         }
 
-        // --- BLAST CONTROL LOGIC (NEW) ---
+        // --- BLAST CONTROL LOGIC ---
         function updateBlastUI(data) {
             const badgeEl = document.getElementById('blastStatusBadge');
             const statusMap = {
@@ -783,6 +891,155 @@
         // Start Polling on Load
         setInterval(fetchBlastStatus, 2000); // Poll every 2 seconds
         fetchBlastStatus(); // Initial call
+
+        // ==========================================
+        //  LOGS SYSTEM LOGIC (NEW & ENHANCED)
+        // ==========================================
+        
+        function initLogSystem() {
+            // Calculate Stats
+            let success = rawLogs.filter(l => l.status.includes('SUCCESS')).length;
+            let failed = rawLogs.filter(l => l.status.includes('FAILED') || l.status.includes('FLOOD')).length;
+            
+            document.getElementById('log-total').innerText = rawLogs.length;
+            document.getElementById('log-success').innerText = success;
+            document.getElementById('log-failed').innerText = failed;
+
+            renderLogTable();
+        }
+
+        function changeRowsPerPage() {
+            rowsPerPage = parseInt(document.getElementById('rowsPerPage').value);
+            currentPage = 1;
+            renderLogTable();
+        }
+
+        function sortLogTable(key) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            // Logic sort sederhana
+            if (key === 'time') {
+                currentLogs.sort((a, b) => {
+                    return sortDirection === 'asc' ? 
+                        new Date(a.created_at) - new Date(b.created_at) : 
+                        new Date(b.created_at) - new Date(a.created_at);
+                });
+            } else if (key === 'group') {
+                currentLogs.sort((a, b) => {
+                    return sortDirection === 'asc' ? 
+                        a.group_name.localeCompare(b.group_name) : 
+                        b.group_name.localeCompare(a.group_name);
+                });
+            }
+            renderLogTable(false); // false = jangan reset filter
+        }
+
+        function renderLogTable(resetFilter = true) {
+            const tbody = document.getElementById('logTableBody');
+            const searchVal = document.getElementById('logSearchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('logStatusFilter').value;
+
+            // 1. FILTERING
+            if (resetFilter) {
+                currentLogs = rawLogs.filter(log => {
+                    const matchesSearch = log.group_name.toLowerCase().includes(searchVal) || 
+                                          (log.error_message && log.error_message.toLowerCase().includes(searchVal));
+                    const matchesStatus = statusFilter === 'ALL' || log.status.includes(statusFilter);
+                    return matchesSearch && matchesStatus;
+                });
+            }
+
+            // 2. PAGINATION LOGIC
+            const totalItems = currentLogs.length;
+            const totalPages = Math.ceil(totalItems / rowsPerPage);
+            if (currentPage > totalPages) currentPage = totalPages || 1;
+
+            const startIndex = (currentPage - 1) * rowsPerPage;
+            const endIndex = Math.min(startIndex + rowsPerPage, totalItems);
+            const displayLogs = currentLogs.slice(startIndex, endIndex);
+
+            // 3. RENDER TABLE ROWS
+            let html = '';
+            if (displayLogs.length === 0) {
+                html = `<tr><td colspan="5" class="text-center py-5 text-muted"><i class="fas fa-search me-2"></i>Data tidak ditemukan</td></tr>`;
+            } else {
+                displayLogs.forEach(log => {
+                    // Badge Styling
+                    let badgeClass = 'bg-secondary';
+                    let iconClass = 'fa-question';
+                    if (log.status.includes('SUCCESS')) { badgeClass = 'bg-success bg-opacity-10 text-success'; iconClass = 'fa-check'; }
+                    else if (log.status.includes('RETRY')) { badgeClass = 'bg-warning bg-opacity-10 text-warning'; iconClass = 'fa-redo'; }
+                    else if (log.status.includes('FLOOD') || log.status.includes('WAIT')) { badgeClass = 'bg-info bg-opacity-10 text-info'; iconClass = 'fa-clock'; }
+                    else { badgeClass = 'bg-danger bg-opacity-10 text-danger'; iconClass = 'fa-times'; }
+
+                    // Safe Message
+                    const safeMsg = (log.error_message || '').replace(/"/g, '&quot;');
+                    const shortMsg = safeMsg.length > 50 ? safeMsg.substring(0, 50) + '...' : (safeMsg || 'OK');
+
+                    html += `
+                        <tr class="border-bottom-0">
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark">${log.created_at.substring(11, 19)}</div>
+                                <div class="small text-muted" style="font-size:0.7rem">${log.created_at.substring(0, 10)}</div>
+                            </td>
+                            <td class="fw-bold text-primary text-truncate" style="max-width: 200px;">${log.group_name}</td>
+                            <td>
+                                ${log.topic_id ? `<span class="badge bg-light text-dark border font-monospace">${log.topic_id}</span>` : '<span class="text-muted">-</span>'}
+                            </td>
+                            <td>
+                                <span class="badge ${badgeClass} rounded-pill px-3 py-2"><i class="fas ${iconClass} me-1"></i>${log.status}</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="viewLogDetail('${log.status}', '${log.group_name}', '${safeMsg.replace(/\n/g, ' ')}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            tbody.innerHTML = html;
+
+            // 4. RENDER PAGINATION CONTROLS
+            document.getElementById('showingInfo').innerText = `Menampilkan ${totalItems > 0 ? startIndex + 1 : 0} - ${endIndex} dari ${totalItems} data`;
+            
+            let pageHtml = '';
+            // Prev
+            pageHtml += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <button class="page-link" onclick="goToPage(${currentPage - 1})"><i class="fas fa-chevron-left"></i></button>
+            </li>`;
+            
+            // Page Numbers (Simple logic for now)
+            for(let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    pageHtml += `<li class="page-item"><button class="page-link ${currentPage === i ? 'active' : ''}" onclick="goToPage(${i})">${i}</button></li>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    pageHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+                }
+            }
+
+            // Next
+            pageHtml += `<li class="page-item ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}">
+                <button class="page-link" onclick="goToPage(${currentPage + 1})"><i class="fas fa-chevron-right"></i></button>
+            </li>`;
+            
+            document.getElementById('paginationControls').innerHTML = pageHtml;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderLogTable(false);
+        }
+
+        function viewLogDetail(status, group, msg) {
+            document.getElementById('modalLogStatus').innerText = status;
+            document.getElementById('modalLogTarget').innerText = group;
+            document.getElementById('modalLogMessage').innerText = msg || 'Tidak ada pesan error.';
+            new bootstrap.Modal(document.getElementById('logDetailModal')).show();
+        }
+
+        // Init Logs on Load
+        document.addEventListener('DOMContentLoaded', initLogSystem);
+
 
         // --- SCANNER LOGIC ---
         function scanTelegram() {
