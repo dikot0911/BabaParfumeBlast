@@ -118,11 +118,7 @@ Log pengiriman pesan
 
 ---
 
-### 📥 Clone Repository
-```bash
-git clone https://github.com/username-anda/baba-parfume-bot.git
-cd baba-parfume-bot
-
+### 🔐 Konfigurasi Environment
 
 # Telegram Auth
 API_ID=123456
